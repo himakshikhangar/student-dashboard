@@ -855,16 +855,548 @@ function renderAll() {
   renderStudents();
   renderAttention();
   renderGradeChart();
+  renderImproved();
+  renderMessage();
   if (ui.view === "classroom") {
     renderScene();
   }
-  if (typeof renderStars === "function" && ui.view === "stars") {
+  if (ui.view === "stars") {
     try {
       renderStars();
     } catch (e) {
       return;
     }
   }
+}
+
+/* Ids picked this cold-call round. */
+var spinPicked = [];
+
+/* Noise meter audio nodes. */
+var noiseStream = null;
+var noiseAnalyser = null;
+var noiseOn = false;
+
+/* Weekly time steps from the earliest date to today. */
+var timeSteps = [];
+
+/* Students not yet picked this round. */
+function spinRemaining() {
+  return store.students.filter(function (s) {
+    return spinPicked.indexOf(s.id) === -1;
+  });
+}
+
+/* Pick a random unpicked student, reset the round when done. */
+function spinPick() {
+  var left = spinRemaining();
+  if (left.length === 0) {
+    spinPicked = [];
+    left = store.students.slice();
+    document.getElementById("spin-result").textContent = "Round complete. Starting a new round.";
+  }
+  if (left.length === 0) {
+    return;
+  }
+  var pick = left[Math.floor(Math.random() * left.length)];
+  spinPicked.push(pick.id);
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var wheel = document.getElementById("wheel");
+  document.getElementById("wheel-label").textContent = pick.name;
+  if (!reduce) {
+    wheel.classList.remove("spin");
+    void wheel.offsetWidth;
+    wheel.classList.add("spin");
+  }
+  document.getElementById("spin-result").textContent = pick.name + " (roll " + pick.rollNo + "). " + spinRemaining().length + " left.";
+}
+
+/* Clear the cold-call round. */
+function resetSpin() {
+  spinPicked = [];
+  document.getElementById("wheel-label").textContent = "Spin";
+  document.getElementById("spin-result").textContent = "Nobody picked yet this round.";
+}
+
+/* Make balanced teams with snake dealing by average. */
+function makeTeams() {
+  var n = Math.max(2, Math.min(9, Number(document.getElementById("team-count").value) || 3));
+  var sorted = store.students.slice().sort(function (a, b) {
+    var aa = studentView(a).avg;
+    var bb = studentView(b).avg;
+    if (aa === null && bb === null) {
+      return 0;
+    }
+    if (aa === null) {
+      return 1;
+    }
+    if (bb === null) {
+      return -1;
+    }
+    return bb - aa;
+  });
+  var teams = [];
+  for (var i = 0; i < n; i++) {
+    teams.push([]);
+  }
+  sorted.forEach(function (s, idx) {
+    var round = Math.floor(idx / n);
+    var pos = idx % n;
+    var team = round % 2 === 0 ? pos : n - 1 - pos;
+    teams[team].push(s);
+  });
+  ui.lastTeams = teams.map(function (t) {
+    return t.map(function (s) { return s.id; });
+  });
+  renderTeams(teams);
+  if (ui.view === "stars") {
+    renderStars();
+  }
+}
+
+/* Render team lists. */
+function renderTeams(teams) {
+  var box = document.getElementById("teams-out");
+  box.textContent = "";
+  teams.forEach(function (t, i) {
+    var p = document.createElement("p");
+    p.textContent = "Team " + (i + 1) + ": " + t.map(function (s) { return s.name; }).join(", ");
+    box.appendChild(p);
+  });
+}
+
+/* True when two seats sit next to each other. */
+function seatsAdjacent(a, b) {
+  return a.row === b.row && Math.abs(a.col - b.col) <= 1;
+}
+
+/* Check keepApart and frontRow for a seat map. */
+function seatsOk(map) {
+  var cons = store.constraints || { keepApart: [], frontRow: [] };
+  var badKeep = null;
+  (cons.keepApart || []).forEach(function (pair) {
+    if (map[pair[0]] && map[pair[1]] && seatsAdjacent(map[pair[0]], map[pair[1]])) {
+      badKeep = pair;
+    }
+  });
+  if (badKeep) {
+    return { ok: false, msg: "Could not keep " + nameOf(badKeep[0]) + " and " + nameOf(badKeep[1]) + " apart." };
+  }
+  var badFront = (cons.frontRow || []).filter(function (id) {
+    return map[id] && map[id].row !== 0;
+  });
+  if (badFront.length > 0) {
+    return { ok: false, msg: "Could not place " + nameOf(badFront[0]) + " in the front row." };
+  }
+  return { ok: true, msg: "" };
+}
+
+/* Name for an id, or the id when missing. */
+function nameOf(id) {
+  var s = findStudent(id);
+  return s ? s.name : id;
+}
+
+/* Shuffle seats, respecting constraints. */
+function shuffleSeats() {
+  if (isReadOnly()) {
+    return;
+  }
+  var seats = store.students.map(function (s) {
+    return { row: s.seat.row, col: s.seat.col };
+  });
+  for (var attempt = 0; attempt < 200; attempt++) {
+    var shuffled = seats.slice();
+    for (var i = shuffled.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = shuffled[i];
+      shuffled[i] = shuffled[j];
+      shuffled[j] = tmp;
+    }
+    var map = {};
+    store.students.forEach(function (s, k) {
+      map[s.id] = shuffled[k] || s.seat;
+    });
+    var res = seatsOk(map);
+    if (res.ok) {
+      store.students.forEach(function (s) {
+        s.seat = map[s.id];
+      });
+      saveStore();
+      renderAll();
+      document.getElementById("seat-msg").textContent = "Seats shuffled.";
+      return;
+    }
+    if (attempt === 199) {
+      document.getElementById("seat-msg").textContent = res.msg;
+    }
+  }
+}
+
+/* Start or stop the noise meter. */
+function toggleNoise() {
+  if (noiseOn) {
+    stopNoise();
+    return;
+  }
+  var msg = document.getElementById("noise-msg");
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    msg.textContent = "Microphone needs Live Server. Open the page through Live Server.";
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+    noiseStream = stream;
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    var ctx = new Ctx();
+    var src = ctx.createMediaStreamSource(stream);
+    noiseAnalyser = ctx.createAnalyser();
+    noiseAnalyser.fftSize = 512;
+    src.connect(noiseAnalyser);
+    noiseOn = true;
+    document.getElementById("noise-btn").textContent = "Stop noise meter";
+    msg.textContent = "Listening. Desks jitter with loudness.";
+    noiseTick();
+  }).catch(function () {
+    msg.textContent = "Microphone blocked. Allow it in the browser's site settings.";
+  });
+}
+
+/* Stop the noise meter and still the desks. */
+function stopNoise() {
+  noiseOn = false;
+  if (noiseStream) {
+    noiseStream.getTracks().forEach(function (t) {
+      t.stop();
+    });
+    noiseStream = null;
+  }
+  document.getElementById("noise-btn").textContent = "Start noise meter";
+  document.getElementById("noise-msg").textContent = "Audio is never recorded, stored or sent.";
+  if (typeof ClassScene !== "undefined") {
+    ClassScene.setShake(0);
+  }
+}
+
+/* Read loudness and jitter desks above a threshold. */
+function noiseTick() {
+  if (!noiseOn || !noiseAnalyser) {
+    return;
+  }
+  var data = new Uint8Array(noiseAnalyser.fftSize);
+  noiseAnalyser.getByteTimeDomainData(data);
+  var sum = 0;
+  data.forEach(function (v) {
+    sum += Math.pow((v - 128) / 128, 2);
+  });
+  var loud = Math.sqrt(sum / data.length);
+  var level = Math.min(1, Math.max(0, (loud - 0.05) * 4));
+  if (typeof ClassScene !== "undefined") {
+    ClassScene.setShake(level);
+  }
+  setTimeout(noiseTick, 120);
+}
+
+/* Earliest date in tests or attendance. */
+function earliestDate() {
+  var dates = [];
+  store.students.forEach(function (s) {
+    (s.tests || []).forEach(function (t) {
+      dates.push(t.date);
+    });
+    Object.keys(s.attendance || {}).forEach(function (d) {
+      dates.push(d);
+    });
+  });
+  dates.sort();
+  return dates.length ? dates[0] : todayKey();
+}
+
+/* Build weekly steps from the earliest date to today. */
+function buildTimeSteps() {
+  timeSteps = [];
+  var start = new Date(earliestDate() + "T12:00:00");
+  var end = new Date(todayKey() + "T12:00:00");
+  var d = new Date(start);
+  while (d <= end) {
+    timeSteps.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 7);
+  }
+  if (timeSteps[timeSteps.length - 1] !== todayKey()) {
+    timeSteps.push(todayKey());
+  }
+}
+
+/* Set up the time travel slider. */
+function setupTimeSlider() {
+  buildTimeSteps();
+  var slider = document.getElementById("time-slider");
+  slider.min = "0";
+  slider.max = String(timeSteps.length - 1);
+  slider.value = String(timeSteps.length - 1);
+  ui.timeCutoff = null;
+  document.getElementById("time-label").textContent = "Today";
+  document.getElementById("time-note").hidden = true;
+}
+
+/* Move time travel to the chosen week. */
+function onTimeChange(ev) {
+  var idx = Number(ev.target.value);
+  var picked = timeSteps[idx];
+  if (picked === todayKey()) {
+    ui.timeCutoff = null;
+    document.getElementById("time-label").textContent = "Today";
+    document.getElementById("time-note").hidden = true;
+  } else {
+    ui.timeCutoff = picked;
+    document.getElementById("time-label").textContent = "Week of " + picked;
+    document.getElementById("time-note").hidden = false;
+  }
+  renderAll();
+}
+
+/* Render the top 3 most improved students. */
+function renderImproved() {
+  var list = document.getElementById("improved-list");
+  list.textContent = "";
+  mostImproved(store.students.map(function (s) {
+    return { id: s.id, name: s.name, tests: visibleTests(s) };
+  }), 3).forEach(function (row) {
+    var li = document.createElement("li");
+    li.textContent = row.name + " (+" + Math.round(row.gain) + ")";
+    list.appendChild(li);
+  });
+  if (!list.children.length) {
+    var li = document.createElement("li");
+    li.textContent = "Not enough tests yet.";
+    list.appendChild(li);
+  }
+}
+
+/* Parent message for the selected student and tone. */
+function messageText() {
+  var s = findStudent(ui.selectedId) || store.students[0];
+  if (!s) {
+    return "";
+  }
+  var v = studentView(s);
+  var avg = v.avg === null ? "no tests yet" : String(Math.round(v.avg));
+  var att = v.att === null ? "no data" : String(Math.round(v.att)) + "%";
+  var tone = document.getElementById("msg-tone").value;
+  if (tone === "friendly") {
+    return "Hi, quick note on " + s.name + ": average " + avg + ", attendance " + att + ". Thanks for your support.";
+  }
+  if (tone === "concerned") {
+    return "I am writing about " + s.name + ": average " + avg + ", attendance " + att + ". Please meet me to plan next steps.";
+  }
+  return "Dear parent, " + s.name + " has average " + avg + " and attendance " + att + ". Regards, class teacher.";
+}
+
+/* Show the parent message preview. */
+function renderMessage() {
+  document.getElementById("msg-preview").textContent = messageText();
+}
+
+/* Copy the parent message to the clipboard. */
+function copyMessage() {
+  var text = messageText();
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text);
+    return;
+  }
+  var box = document.createElement("textarea");
+  box.value = text;
+  document.body.appendChild(box);
+  box.select();
+  document.execCommand("copy");
+  document.body.removeChild(box);
+}
+
+/* Open the command bar. */
+function openCmd() {
+  document.getElementById("cmdbar").hidden = false;
+  document.getElementById("cmd-input").value = "";
+  document.getElementById("cmd-list").textContent = "";
+  document.getElementById("cmd-input").focus();
+}
+
+/* Close the command bar. */
+function closeCmd() {
+  document.getElementById("cmdbar").hidden = true;
+}
+
+/* Names starting with the given prefix, ignoring case. */
+function matchNames(prefix) {
+  var q = (prefix || "").toLowerCase();
+  return store.students.filter(function (s) {
+    return s.name.toLowerCase().indexOf(q) === 0;
+  });
+}
+
+/* Show command matches in the list. */
+function showCmdMatches(rows) {
+  var list = document.getElementById("cmd-list");
+  list.textContent = "";
+  rows.forEach(function (s) {
+    var li = document.createElement("li");
+    li.textContent = s.name + " (roll " + s.rollNo + ")";
+    list.appendChild(li);
+  });
+}
+
+/* Run one command bar command. */
+function runCmd(raw) {
+  var parts = raw.trim().split(/\s+/);
+  var cmd = (parts[0] || "").toLowerCase();
+  var rest = parts.slice(1).join(" ");
+  if (cmd === "theme") {
+    toggleTheme();
+    closeCmd();
+    return;
+  }
+  if (cmd === "spin") {
+    spinPick();
+    closeCmd();
+    return;
+  }
+  if (cmd === "undo") {
+    undoDelete();
+    closeCmd();
+    return;
+  }
+  if (cmd === "add" && rest) {
+    openForm(null);
+    document.getElementById("name-input").value = rest;
+    closeCmd();
+    return;
+  }
+  if ((cmd === "present" || cmd === "absent" || cmd === "open") && rest) {
+    var matches = matchNames(rest);
+    if (matches.length === 0) {
+      showCmdMatches([]);
+      document.getElementById("cmd-list").textContent = "No match.";
+      return;
+    }
+    if (matches.length > 1) {
+      showCmdMatches(matches);
+      return;
+    }
+    var s = matches[0];
+    if (cmd === "open") {
+      openPanel(s.id);
+    } else {
+      s.attendance = s.attendance || {};
+      s.attendance[todayKey()] = cmd === "present";
+      saveStore();
+      renderAll();
+    }
+    closeCmd();
+  }
+}
+
+/* Draw the constellation canvas from seats, average and attendance. */
+function renderStars() {
+  var canvas = document.getElementById("stars");
+  var ctx = canvas.getContext("2d");
+  var ink = "#1B2A4A";
+  try {
+    ink = getComputedStyle(document.documentElement).getPropertyValue("--ink") || ink;
+  } catch (e) {
+    ink = "#1B2A4A";
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  var pos = {};
+  store.students.forEach(function (s) {
+    var v = studentView(s);
+    var x = 40 + ((s.seat.col + 0.5) / 6) * (canvas.width - 80);
+    var rows = Math.max(1, Math.ceil(store.students.length / 6));
+    var y = 40 + ((s.seat.row + 0.5) / rows) * (canvas.height - 80);
+    pos[s.id] = { x: x, y: y };
+    var r = v.avg === null ? 4 : 4 + (Math.min(100, v.avg) / 100) * 10;
+    var alpha = v.att === null ? 0.4 : 0.4 + (v.att / 100) * 0.6;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = ink;
+    ctx.globalAlpha = alpha;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+  (ui.lastTeams || []).forEach(function (team) {
+    for (var i = 1; i < team.length; i++) {
+      var a = pos[team[i - 1]];
+      var b = pos[team[i]];
+      if (a && b) {
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = ink;
+        ctx.stroke();
+      }
+    }
+  });
+}
+
+/* Temporary helper to fill fake students for testing. Removed in Phase 6. */
+function devFill(n) {
+  var fakes = ["Meera Nair", "Arjun Menon", "Sara Khan", "Rohan Das", "Priya Iyer", "Kunal Bose", "Neha Jain", "Aditya Rao", "Pooja Shah", "Rahul Yadav", "Simran Kaur", "Varun Nambiar", "Ankit Tiwari", "Divya Bhat", "Sahil Kumar", "Riya Sen", "Aman Joshi", "Kavya Reddy", "Nikhil Anand", "Shreya Pillai", "Farhan Ali", "Geeta Rao", "Harish Kumar", "Lakshmi Venkat", "Manoj Tiwari", "Naina Kapoor", "Omar Sheikh", "Pankaj Mishra", "Qureshi Ahmed", "Rekha Singh", "Suresh Raina", "Tara Dutt", "Umesh Chandra", "Vani Rao", "Wasim Khan", "Xavier D souza", "Yash Thakur", "Zoya Khan", "Biren Das", "Chetan Bhagat"];
+  var used = {};
+  store.students.forEach(function (s) {
+    used[s.seat.row + ":" + s.seat.col] = true;
+  });
+  var k = 0;
+  while (store.students.length < n && k < fakes.length * 2) {
+    var name = fakes[k % fakes.length] + (k >= fakes.length ? " " + (k + 1) : "");
+    k += 1;
+    var clash = store.students.some(function (s) { return s.name === name; });
+    if (clash) {
+      continue;
+    }
+    store.students.push({ id: "s_dev" + k + Date.now(), name: name, rollNo: String(100 + k), className: "10-B", notes: "", seat: freeSeat(used), attendance: { "2026-10-02": true }, tests: [{ subject: "Maths", name: "Unit test 1", date: "2026-09-20", score: 30 + (k % 20), max: 50 }] });
+    var last = store.students[store.students.length - 1];
+    used[last.seat.row + ":" + last.seat.col] = true;
+  }
+  saveStore();
+  renderAll();
+}
+
+/* Wire up every Phase 5 control. */
+function wirePhase5() {
+  document.getElementById("spin-btn").addEventListener("click", spinPick);
+  document.getElementById("spin-reset").addEventListener("click", resetSpin);
+  document.getElementById("team-btn").addEventListener("click", makeTeams);
+  document.getElementById("seat-btn").addEventListener("click", shuffleSeats);
+  document.getElementById("noise-btn").addEventListener("click", toggleNoise);
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      stopNoise();
+    }
+  });
+  document.getElementById("time-slider").addEventListener("input", onTimeChange);
+  document.getElementById("msg-tone").addEventListener("change", renderMessage);
+  document.getElementById("msg-copy").addEventListener("click", copyMessage);
+  document.getElementById("cmd-input").addEventListener("input", function (ev) {
+    var v = ev.target.value;
+    if (/^(present|absent|open)\s+/i.test(v)) {
+      var rest = v.replace(/^\w+\s+/, "");
+      showCmdMatches(matchNames(rest));
+    }
+  });
+  document.getElementById("cmd-input").addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") {
+      runCmd(ev.target.value);
+    }
+    if (ev.key === "Escape") {
+      closeCmd();
+    }
+  });
+  document.addEventListener("keydown", function (ev) {
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k") {
+      ev.preventDefault();
+      openCmd();
+    }
+    if (ev.key === "Escape") {
+      closeCmd();
+    }
+  });
 }
 
 /* Wire up every control. */
@@ -952,6 +1484,8 @@ function init() {
   });
   document.getElementById("panel-print").addEventListener("click", printReports);
   document.getElementById("test-date").value = todayKey();
+  wirePhase5();
+  setupTimeSlider();
   try {
     if (typeof ClassScene !== "undefined") {
       ClassScene.onSelect(openPanel);

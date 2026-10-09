@@ -130,7 +130,7 @@ try {
 </div>
 <div id="view-stars" hidden>
 <canvas id="stars" width="640" height="420" aria-label="Constellation view"></canvas>
-<p class="muted">Constellation arrives in Phase 5.</p>
+<p class="muted">Lines join students placed in the same team.</p>
 </div>
 </div>
 <aside id="panel" aria-label="Student panel" hidden>
@@ -179,6 +179,63 @@ try {
 </aside>
 </div>
 <div id="report" aria-hidden="true"></div>
+<section aria-label="Extra tools">
+<h2>Cold-call spinner</h2>
+<div class="wheel-wrap">
+<div id="wheel" class="wheel" aria-hidden="true"><div id="wheel-label">Spin</div></div>
+</div>
+<p id="spin-result" aria-live="polite">Nobody picked yet this round.</p>
+<div class="form-actions">
+<button type="button" id="spin-btn" class="btn">Spin</button>
+<button type="button" id="spin-reset" class="btn">Reset round</button>
+</div>
+<h2>Team maker</h2>
+<div>
+<label for="team-count">Group count</label>
+<input id="team-count" type="number" min="2" max="9" value="3">
+</div>
+<div class="form-actions">
+<button type="button" id="team-btn" class="btn">Make teams</button>
+</div>
+<div id="teams-out" aria-live="polite"></div>
+<h2>Seating shuffler</h2>
+<div class="form-actions">
+<button type="button" id="seat-btn" class="btn">Shuffle seats</button>
+</div>
+<p id="seat-msg" aria-live="polite"></p>
+<h2>Noise meter</h2>
+<div class="form-actions">
+<button type="button" id="noise-btn" class="btn">Start noise meter</button>
+</div>
+<p id="noise-msg" class="muted">Audio is never recorded, stored or sent.</p>
+<h2>Time travel</h2>
+<div>
+<label for="time-slider">Week</label>
+<input id="time-slider" type="range" min="0" max="0" value="0" step="1">
+</div>
+<p id="time-label">Today</p>
+<p id="time-note" class="red-pen" hidden>Viewing a past week. Editing is off until back at today.</p>
+<h2>Most improved</h2>
+<ol id="improved-list"></ol>
+<h2>Parent message maker</h2>
+<div>
+<label for="msg-tone">Tone</label>
+<select id="msg-tone">
+<option value="formal">Formal</option>
+<option value="friendly">Friendly</option>
+<option value="concerned">Concerned</option>
+</select>
+</div>
+<p id="msg-preview"></p>
+<div class="form-actions">
+<button type="button" id="msg-copy" class="btn">Copy message</button>
+</div>
+</section>
+</div>
+<div id="cmdbar" class="cmdbar" hidden>
+<label for="cmd-input">Command</label>
+<input id="cmd-input" type="text" placeholder="add, present, absent, open, theme, spin, undo">
+<ul id="cmd-list"></ul>
 </div>
 <div id="toast" class="toast" hidden>
 <span>Student deleted. </span>

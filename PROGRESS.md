@@ -23,3 +23,4 @@
 - Phase 2 done: validation via rules.js, edit, delete + 8s Undo toast, persist classdeck.v1, backup/restore with shape check, empty state. node --check clean.
 - Phase 3 done: attendance toggle + mark all + streak, test entry, avg/grade cards, attention panel, search/filter/sort, notes, stats with count-up, SVG charts, CSV, print report. node --check clean.
 - Phase 4 done: scene3d.js full (shared geo, grade colours + letters + flags, clamped orbit, tooltip, click, shake, reduced-motion), card tilt/flip, WebGL fallback, classroom default. node --check clean.
+- Phase 5 done: spinner (CSS 3D), teams snake, seats with constraint errors, noise meter, time slider read-only, trend + most improved, messages, cmd bar, badges, constellation, devFill temp. runChecks 19 passed.

@@ -246,6 +246,53 @@ table.report-table td.num, table.report-table th.num { text-align: right; font-v
 .toast[hidden] { display: none; }
 .toast .btn { background: var(--yellow); border-color: var(--yellow); color: var(--on-yellow); }
 
+.wheel-wrap { perspective: 600px; margin-top: 8px; }
+.wheel {
+  width: 160px;
+  height: 160px;
+  border: 2px solid var(--blue);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transition: transform 900ms ease;
+  background: var(--surface);
+}
+.wheel.spin { transform: rotateY(720deg) rotate(180deg); }
+#wheel-label { font-size: 20px; }
+
+.cmdbar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(480px, 90vw);
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+.cmdbar[hidden] { display: none; }
+.cmdbar input { width: 100%; min-height: 40px; font: inherit; }
+.cmdbar ul { padding-left: 20px; }
+
+#time-slider { width: 100%; min-height: 40px; }
+#teams-out { display: grid; gap: 8px; margin-top: 8px; }
+#msg-preview { max-width: 70ch; }
+
+section[aria-label="Extra tools"] > div, section[aria-label="Extra tools"] > p { max-width: 70ch; }
+section[aria-label="Extra tools"] input, section[aria-label="Extra tools"] select {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
 #report { display: none; }
 
 @media print {
