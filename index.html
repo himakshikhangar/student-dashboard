@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="paper">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script>
+/* Set the saved theme before first paint, else follow the OS theme. */
+try {
+  var saved = localStorage.getItem("classdeck.theme");
+  var theme = saved === "paper" || saved === "chalkboard" ? saved : null;
+  if (!theme) {
+    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "chalkboard" : "paper";
+  }
+  document.documentElement.setAttribute("data-theme", theme);
+} catch (e) {
+  document.documentElement.setAttribute("data-theme", "paper");
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700&family=Public+Sans:wght@400;600&family=Caveat:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="dashboard">
+<header class="topbar">
+<h1>Student Dashboard</h1>
+<div class="actions">
+<button type="button" id="show-btn" class="btn btn-blue">Show Students</button>
+<button type="button" id="add-btn" class="btn btn-green">Add Student</button>
+<button type="button" id="theme-btn" class="btn btn-yellow">Change Theme</button>
+</div>
+</header>
+<div class="actions secondary">
+<button type="button" id="backup-btn" class="btn">Download backup</button>
+<button type="button" id="restore-btn" class="btn">Restore backup</button>
+<input type="file" id="restore-file" accept="application/json" hidden>
+</div>
+<p id="restore-error" class="error" hidden></p>
+<form id="student-form" hidden>
+<h2 id="form-title">Add student</h2>
+<div>
+<label for="name-input">Name</label>
+<input id="name-input" name="name" type="text" maxlength="40" required>
+</div>
+<div>
+<label for="roll-input">Roll number</label>
+<input id="roll-input" name="rollNo" type="text" required>
+</div>
+<div>
+<label for="class-input">Class</label>
+<input id="class-input" name="className" type="text" required>
+</div>
+<p id="form-error" class="error" hidden></p>
+<div class="form-actions">
+<button type="submit" class="btn btn-green">Save student</button>
+<button type="button" id="cancel-btn" class="btn">Cancel</button>
+</div>
+</form>
+<div id="empty" hidden>
+<p>No students yet. Add one or load a sample class.</p>
+<button type="button" id="sample-btn" class="btn btn-blue">Load sample class</button>
+</div>
+<div id="students" aria-live="polite"></div>
+</div>
+<div id="toast" class="toast" hidden>
+<span>Student deleted. </span>
+<button type="button" id="undo-btn" class="btn">Undo</button>
+</div>
+<script src="seed.js"></script>
+<script src="rules.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
