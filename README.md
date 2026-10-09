@@ -1,6 +1,6 @@
 # Campus Desk
 
-Campus Desk is a dashboard where a college student tracks classes and study.
+Campus Desk is a dashboard where a college student manages study tasks.
 
 HTML, CSS, JavaScript, Anime.js.
 
@@ -19,11 +19,10 @@ It runs in the browser with no backend and no sign-up.
 - **What it does:** It greets the student and shows six tiles for the day.
 - **How to use it:**
   1. Open the app to land on Home.
-  2. Read the greeting line for class count and low attendance.
+  2. Read the greeting line for classes and low attendance.
   3. Tap a button to jump to Attendance, Focus or Timetable.
-- **How it works:** Tiles show classes today, mean attendance, days to the
-  next exam, pending tasks, focus sessions and CGPA. Day progress runs from
-  8:00 to 18:00.
+- **How it works:** Tiles show classes, mean attendance, days to next exam,
+  tasks, sessions and CGPA. Day progress runs from 8:00 to 18:00.
 
 ### Overview
 
@@ -43,8 +42,7 @@ It runs in the browser with no backend and no sign-up.
   2. Tap a block to edit it or delete it.
   3. Tap Enable reminders to allow browser notifications.
 - **How it works:** A reminder fires 10 minutes before class with a toast
-  and a notification. End time must be after start time, and the subject
-  must exist first.
+  and a notice. End time must be after start time, and a subject must exist.
 
 ### Attendance
 
@@ -64,8 +62,8 @@ It runs in the browser with no backend and no sign-up.
   1. Add an exam with name, subject, date and time.
   2. Watch the days, hrs, min and sec boxes tick.
   3. Remove past exams with the Remove link.
-- **How it works:** Exams sort by date and time. The countdown ticks every
-  second and flips the digit that changed. The subject must exist first.
+- **How it works:** The countdown ticks each second and flips each changed
+  digit. A subject must exist before an exam is added.
 
 ### Grades
 
@@ -74,9 +72,8 @@ It runs in the browser with no backend and no sign-up.
   1. Add semester, subject, credits, marks and max marks.
   2. Read GPA cards per semester at the top.
   3. Delete a row with the cross button.
-- **How it works:** Points run 10, 9, 8, 7, 6, 5, 4, 0 from marks >= 90,
-  80, 70, 60, 50, 45, 40. GPA is the credit-weighted mean. Marks cannot
-  pass max marks.
+- **How it works:** Points run 10 down to 0 at marks 90, 80, 70, 60, 50,
+  45 and 40. GPA is the credit-weighted mean, and marks cannot pass max.
 
 ### Focus
 
@@ -130,43 +127,47 @@ It runs in the browser with no backend and no sign-up.
 
 ## Animations and 3D
 
-| Effect                        | Where                   | Library |
-|-------------------------------|-------------------------|---------|
-| Opening curtains, cube, title | First visit intro       | Anime.js|
-| Active tab pill               | Sidebar                 | Anime.js|
-| Sidebar link entrance         | Sidebar                 | Anime.js|
-| Dock magnification            | Sidebar, wide screens   | Anime.js|
-| Click ripple                  | Sidebar links           | Anime.js|
-| Dot grid build, ripple, glow  | Home hero               | Anime.js|
-| Greeting letters rise         | Home hero               | Anime.js|
-| Stat tiles, rings, count-up   | Home stats              | Anime.js|
-| Rolling clock digits          | Home hero               | Anime.js|
-| Day progress bar fill         | Home                    | Anime.js|
-| Title letters rise            | Every view              | Anime.js|
-| Stat numbers pop              | Overview, Grades        | Anime.js|
-| Rows slide in on scroll       | Lists                   | Anime.js|
-| Attendance bars and count-up  | Overview                | Anime.js|
-| Week day tiles flip in        | Overview                | Anime.js|
-| Subject dots pop in           | Overview                | Anime.js|
-| Cards, clock sweep, ring      | Side panel              | Anime.js|
-| Week columns grow             | Side panel              | Anime.js|
-| Cards fade up on view change  | Every view              | CSS     |
-| Card tilt, max 8 degrees      | Cards, hover devices    | CSS     |
-| Attendance card flip          | Attendance              | CSS     |
-| Countdown digit flip          | Exams                   | CSS     |
-| Spinning cube logo            | Sidebar logo            | CSS     |
+| Effect                       | Where                 | Library  |
+|------------------------------|-----------------------|----------|
+| Intro curtains, cube, title  | First visit intro     | Anime.js |
+| Sidebar link entrance        | Sidebar               | Anime.js |
+| Active tab pill              | Sidebar               | Anime.js |
+| Dock magnification           | Sidebar, wide screens | Anime.js |
+| Click ripple                 | Sidebar links         | Anime.js |
+| Dot grid build and ripple    | Home hero             | Anime.js |
+| Pointer glow on dots         | Home hero             | Anime.js |
+| Greeting letters rise        | Home hero             | Anime.js |
+| Stat tiles, rings, count-up  | Home stats            | Anime.js |
+| Rolling clock digits         | Home hero             | Anime.js |
+| Day progress bar fill        | Home                  | Anime.js |
+| Title letters rise           | Every view            | Anime.js |
+| Stat numbers pop             | Overview, Grades      | Anime.js |
+| Rows slide in on scroll      | Lists                 | Anime.js |
+| Attendance bars, count-up    | Overview              | Anime.js |
+| Week day tiles flip in       | Overview              | Anime.js |
+| Subject dots pop in          | Overview              | Anime.js |
+| Cards slide in               | Side panel            | Anime.js |
+| Clock sweep and ticks        | Side panel            | Anime.js |
+| Tasks ring fill              | Side panel            | Anime.js |
+| Attendance bars grow         | Side panel            | Anime.js |
+| Week columns grow            | Side panel            | Anime.js |
+| Cards fade up on change      | Every view            | CSS      |
+| Card tilt, max 8 degrees     | Cards, hover only     | CSS      |
+| Attendance card flip         | Attendance            | CSS      |
+| Countdown digit flip         | Exams                 | CSS      |
+| Spinning cube logo           | Sidebar logo          | CSS      |
 
 All motion switches off when the system has reduced motion turned on.
 
 ## Tech stack
 
-| Tool       | Used for                                              |
-|------------|-------------------------------------------------------|
-| HTML       | Page shell, sidebar, view and panel in `index.html`   |
-| CSS        | Themes and layout in `style.css`, `home.css`, `rail.css`|
-| JavaScript | Data, views, routing and timer in `app.js`            |
-| Anime.js   | All scripted motion in the `anime.js/` files          |
-| Google Fonts| Bricolage Grotesque headings and Public Sans body    |
+| Tool         | Used for                                                 |
+|--------------|----------------------------------------------------------|
+| HTML         | Page shell, sidebar, view and panel in `index.html`      |
+| CSS          | Themes and layout in `style.css`, `home.css`, `rail.css` |
+| JavaScript   | Data, views, routing and timer in `app.js`               |
+| Anime.js v4  | Motion in `anime-*.js` files, loads from jsDelivr CDN    |
+| Google Fonts | Bricolage Grotesque headings and Public Sans body        |
 
 Anime.js v4 loads from the jsDelivr CDN through a defer script tag in
 `index.html`. Fonts load from Google Fonts with `system-ui` fallbacks.
@@ -175,21 +176,20 @@ Anime.js v4 loads from the jsDelivr CDN through a defer script tag in
 
 ```text
 student-dashboard/
-├── AGENTS.md           # Rules for working on this project
-├── README.md           # This file
-├── index.html          # Page shell, sidebar, view and panel
-├── style.css           # Themes, layout, cards, flip and motion
-├── home.css            # Home hero, dot grid and stat tiles
-├── rail.css            # Live side panel for wide screens
-├── app.js              # Data, nine views, routing and reminders
-├── .gitignore          # Git ignore rules
-└── anime.js/           # Anime.js effects, one file per area
-    ├── anime-intro.js  # Opening curtains, cube and title
-    ├── anime-nav.js    # Tab pill, dock zoom and click ripple
-    ├── anime-home.js   # Dot grid, greeting, tiles and clock
-    ├── anime-fill.js   # Overview bars, day tiles and dots
-    ├── anime-fx.js     # Title, stats and row entrance
-    └── anime-rail.js   # Side panel clock, ring, bars and week
+├── AGENTS.md         # Rules for working on this project
+├── README.md         # This file
+├── index.html        # Page shell, sidebar, view and panel
+├── style.css         # Themes, layout, cards, flip and motion
+├── home.css          # Home hero, dot grid and stat tiles
+├── rail.css          # Live side panel for wide screens
+├── app.js            # Data, nine views, routing and reminders
+├── anime-intro.js    # Opening curtains, cube and title
+├── anime-nav.js      # Tab pill, dock zoom and click ripple
+├── anime-home.js     # Dot grid, greeting, tiles and clock
+├── anime-fill.js     # Overview bars, day tiles and dots
+├── anime-fx.js       # Title, stats and row entrance
+├── anime-rail.js     # Side panel clock, ring, bars and week
+└── .gitignore        # Git ignore rules
 ```
 
 ## Run it locally
@@ -200,6 +200,8 @@ student-dashboard/
 4. Right-click `index.html` and choose Open with Live Server.
 5. Keep an internet link on, since fonts and Anime.js load from CDNs.
 
+You can also double-click `index.html` to open it straight in a browser.
+
 ## How your data is stored
 
 Everything stays in this browser in one stored object, and nothing is sent
@@ -207,11 +209,11 @@ anywhere. The Load demo data button fills sample rows, and the Clear all
 data button wipes rows but keeps profile and theme. Clearing browser data
 removes it all.
 
-| Key     | What it holds                                              |
-|---------|------------------------------------------------------------|
-| `sd.v1` | Theme, profile, subjects, classes, attendance, exams, grades, notices, to-dos, focus count|
-
-The intro-seen flag lives in session storage under `sd.intro`.
+| Key        | What it holds                                             |
+|------------|-----------------------------------------------------------|
+| `sd.v1`    | Theme, profile, subjects, classes, attendance, exams,     |
+|            | grades, notices, to-dos and focus count                   |
+| `sd.intro` | Intro-seen flag in session storage, cleared on tab close  |
 
 ## Deploy on GitHub Pages
 
@@ -228,9 +230,7 @@ The intro-seen flag lives in session storage under `sd.intro`.
 - The notice board is manual, with no link to a college system.
 - Data lives in one browser on one device, with no sync.
 - Fonts and Anime.js need internet, since they load from CDNs.
-- If the CDN scripts fail, the page still works but motion is lost.
-- The page points to effect scripts at the root, but the files sit in
-  `anime.js/`, so fix the paths if animations do not run.
+- Without the CDN scripts the page still works, but motion is lost.
 
 ## Live demo
 
