@@ -1335,29 +1335,6 @@ function renderStars() {
   });
 }
 
-/* Temporary helper to fill fake students for testing. Removed in Phase 6. */
-function devFill(n) {
-  var fakes = ["Meera Nair", "Arjun Menon", "Sara Khan", "Rohan Das", "Priya Iyer", "Kunal Bose", "Neha Jain", "Aditya Rao", "Pooja Shah", "Rahul Yadav", "Simran Kaur", "Varun Nambiar", "Ankit Tiwari", "Divya Bhat", "Sahil Kumar", "Riya Sen", "Aman Joshi", "Kavya Reddy", "Nikhil Anand", "Shreya Pillai", "Farhan Ali", "Geeta Rao", "Harish Kumar", "Lakshmi Venkat", "Manoj Tiwari", "Naina Kapoor", "Omar Sheikh", "Pankaj Mishra", "Qureshi Ahmed", "Rekha Singh", "Suresh Raina", "Tara Dutt", "Umesh Chandra", "Vani Rao", "Wasim Khan", "Xavier D souza", "Yash Thakur", "Zoya Khan", "Biren Das", "Chetan Bhagat"];
-  var used = {};
-  store.students.forEach(function (s) {
-    used[s.seat.row + ":" + s.seat.col] = true;
-  });
-  var k = 0;
-  while (store.students.length < n && k < fakes.length * 2) {
-    var name = fakes[k % fakes.length] + (k >= fakes.length ? " " + (k + 1) : "");
-    k += 1;
-    var clash = store.students.some(function (s) { return s.name === name; });
-    if (clash) {
-      continue;
-    }
-    store.students.push({ id: "s_dev" + k + Date.now(), name: name, rollNo: String(100 + k), className: "10-B", notes: "", seat: freeSeat(used), attendance: { "2026-10-02": true }, tests: [{ subject: "Maths", name: "Unit test 1", date: "2026-09-20", score: 30 + (k % 20), max: 50 }] });
-    var last = store.students[store.students.length - 1];
-    used[last.seat.row + ":" + last.seat.col] = true;
-  }
-  saveStore();
-  renderAll();
-}
-
 /* Wire up every Phase 5 control. */
 function wirePhase5() {
   document.getElementById("spin-btn").addEventListener("click", spinPick);
