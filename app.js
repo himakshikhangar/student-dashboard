@@ -19,6 +19,27 @@ const examsSorted=()=>[...S.exams].sort((a,b)=>examTime(a)-examTime(b));
 const nextExam=()=>examsSorted().find(e=>examTime(e)>Date.now());
 const byStart=(a,b)=>a.start<b.start?-1:1;
 const subjOpts=()=>S.subjects.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+// minutes since midnight for an "HH:MM" string
+const toMin=t=>{const[a,b]=t.split(":");return +a*60+(+b)};
+// id of the class in progress right now, or null
+const ttNow=()=>{const n=hm();return (S.tt.filter(c=>c.day==dayIdx()&&c.start<=n&&n<c.end).sort(byStart)[0]||{}).id||null};
+// id of the next class today, or null
+const ttNext=()=>{const n=hm();return (S.tt.filter(c=>c.day==dayIdx()&&c.start>n).sort(byStart)[0]||{}).id||null};
+// grid hour range in minutes, padded by 1h, default 8:00 to 17:00
+function ttRange(){let s=8*60,e=17*60;
+  if(S.tt.length){s=Math.min(...S.tt.map(c=>toMin(c.start)))-60;e=Math.max(...S.tt.map(c=>toMin(c.end)))+60}
+  return {s:Math.max(0,Math.floor(s/60)*60),e:Math.min(1440,Math.ceil(e/60)*60)}}
+// side-by-side lanes for overlapping classes, as {id:{i,n}}
+function ttLayout(list){const out={},groups=[];let g=[],end=-1;
+  list.forEach(c=>{const s=toMin(c.start),e=toMin(c.end);
+    if(s<end){g.push(c);if(e>end)end=e}else{if(g.length)groups.push(g);g=[c];end=e}});
+  if(g.length)groups.push(g);
+  groups.forEach(gg=>{const ends=[];
+    gg.forEach(c=>{const s=toMin(c.start);let i=ends.findIndex(x=>s>=x);if(i<0){i=ends.length;ends.push(0)}ends[i]=toMin(c.end);out[c.id]={i,n:0}});
+    gg.forEach(c=>{out[c.id].n=ends.length})});
+  return out}
+// selected mobile day (null means today) and open sheet (null means closed)
+let ttDay=null,ttSheet=null;
 
 function seed(){
   S=fresh();const n=[["Maths",0],["Physics",1],["Data Structures",2],["English",3]];
@@ -50,8 +71,38 @@ V.overview=()=>{
   return `<div class="grid stats">${stat("Overall attendance",ps.length?avg+"%":"–",avg<75&&ps.length?"red":"green")}${stat("Classes today",today.length)}${stat("Next exam",ex?Math.ceil((examTime(ex)-Date.now())/864e5)+" days":"None")}${stat("CGPA",gpa(S.grades).toFixed(2))}</div>
   ${low.length?`<div class="alert"><b>Attendance shortage</b><br>${low.map(s=>`${esc(s.name)} is at ${pct(s.id)}%: ${need(s.id)}`).join("<br>")}</div>`:""}
   <div class="grid two"><div class="card"><h3>Today's schedule</h3>${classList(today)}</div><div class="card"><h3>To-do</h3>${todoList(S.todos.slice(0,5))}</div></div>`};
-V.timetable=()=>`<form class="card form" data-f="tt"><select name="day" aria-label="Day">${DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join("")}</select><input type="time" name="start" required aria-label="Start"><input type="time" name="end" required aria-label="End"><select name="subj" aria-label="Subject">${subjOpts()}</select><input name="room" placeholder="Room"><button class="btn b">Add class</button><button type="button" class="btn y" data-a="notify">Enable reminders</button></form>
-  <div class="week">${DAYS.map((d,i)=>`<div class="card day${i==dayIdx()?" today":""}"><h3>${d}</h3>${S.tt.some(c=>c.day==i)?classList(S.tt.filter(c=>c.day==i).sort(byStart),1):'<p class="empty">Free</p>'}</div>`).join("")}</div>`;
+V.timetable=()=>{
+  const days=[0,1,2,3,4,5];if(S.tt.some(c=>c.day==6))days.push(6);
+  const R=ttRange(),H=[];for(let h=R.s/60;h<R.e/60;h++)H.push(h);
+  const today=dayIdx(),now=ttNow(),next=ttNext(),sel=ttDay==null?today:ttDay,nm=toMin(hm());
+  const gutter=H.map(h=>`<span class="tt-h" style="top:${(h-R.s/60)*64}px">${String(h).padStart(2,0)}:00</span>`).join("");
+  const lines=H.map(h=>`<div class="tt-hline" style="top:${(h-R.s/60)*64}px"></div>`).join("");
+  const head=days.map(d=>`<div class="tt-hday${d==today?" today":""}">${DAYS[d]}</div>`).join("");
+  const cols=days.map(d=>{
+    const list=S.tt.filter(c=>c.day==d).sort(byStart),lay=ttLayout(list);
+    const blocks=list.map(c=>{const s=subj(c.subj),p=lay[c.id],w=100/p.n;
+      return `<button class="tt-b tilt" data-a="ttEdit" data-id="${c.id}" style="--c:${s.color};top:${(toMin(c.start)-R.s)/60*64}px;height:${Math.max(28,(toMin(c.end)-toMin(c.start))/60*64)}px;left:calc(${p.i*w}% + 4px);width:calc(${w}% - 8px)" aria-label="${esc(s.name)} ${c.start} to ${c.end}"><b>${esc(s.name)}</b><span>${esc(c.room||"")}</span><span>${c.start}–${c.end}</span>${c.id==now?"<em>Now</em>":""}${c.id==next?"<em>Next</em>":""}</button>`}).join("");
+    const line=d==today&&nm>=R.s&&nm<=R.e?`<div class="tt-now" style="top:${(nm-R.s)/60*64}px"></div>`:"";
+    return `<div class="tt-col${d==today?" today":""}">${lines}${blocks}${line}</div>`}).join("");
+  const chips=DAYS.map((d,i)=>`<button class="chip${i==sel?" on":""}${i==today?" today":""}" data-a="ttDay" data-day="${i}" role="tab" aria-selected="${i==sel}">${d}</button>`).join("");
+  const cards=S.tt.filter(c=>c.day==sel).sort(byStart).map(c=>{const s=subj(c.subj);
+    return `<button class="ttm-card" data-a="ttEdit" data-id="${c.id}" style="--c:${s.color}" aria-label="${esc(s.name)} ${c.start} to ${c.end}"><span class="t">${c.start}–${c.end}</span><span class="ttm-main"><b>${esc(s.name)}</b><small>${esc(c.room||"")}${c.id==now&&sel==today?" · Now":""}${c.id==next&&sel==today?" · Next":""}</small></span></button>`}).join("")||'<p class="empty">No classes this day.</p>';
+  let cur={day:sel,start:"09:00",end:"10:00",subj:(S.subjects[0]||{}).id||"",room:""};
+  if(ttSheet&&ttSheet.id)cur=S.tt.find(x=>x.id==ttSheet.id)||cur;
+  const subSel=S.subjects.map(s=>`<option value="${s.id}"${cur.subj==s.id?" selected":""}>${esc(s.name)}</option>`).join("");
+  const sheet=ttSheet?`<div class="sheet-back"><div class="sheet" role="dialog" aria-modal="true" aria-label="${ttSheet.id?"Edit class":"Add class"}"><h3>${ttSheet.id?"Edit class":"Add class"}</h3>
+    <form data-f="ttSheet"><input type="hidden" name="id" value="${ttSheet.id||""}">
+    <label>Day<select name="day">${DAYS.map((d,i)=>`<option value="${i}"${cur.day==i?" selected":""}>${d}</option>`).join("")}</select></label>
+    <label>Start<input type="time" name="start" value="${cur.start}" required></label>
+    <label>End<input type="time" name="end" value="${cur.end}" required></label>
+    <label>Subject<select name="subj">${subSel}</select></label>
+    <label>Room<input name="room" value="${esc(cur.room||"")}" placeholder="Room"></label>
+    <div class="btns"><button class="btn b">Save</button>${ttSheet.id?`<button type="button" class="btn r" data-a="ttDel" data-id="${ttSheet.id}">Delete</button>`:""}<button type="button" class="lnk" data-a="ttClose">Cancel</button></div></form></div></div>`:"";
+  return `<div class="tt-bar"><button class="btn b" data-a="ttAdd">Add class</button><button class="btn y" data-a="notify">Enable reminders</button></div>
+  ${S.tt.length?"":'<p class="empty">No classes yet. Tap Add class to begin.</p>'}
+  <div class="tt-chips" role="tablist" aria-label="Days">${chips}</div>
+  <div class="tt-grid"><div class="tt-head"><div class="tt-corner"></div>${head}</div><div class="tt-body" style="height:${H.length*64}px"><div class="tt-gutter">${gutter}</div>${cols}</div></div>
+  <div class="tt-day">${cards}</div>${sheet}`;};
 V.attendance=()=>`<form class="card form" data-f="subj"><input name="name" placeholder="New subject" required><button class="btn g">Add subject</button></form>
   <div class="grid cards3">${S.subjects.map(s=>{const a=S.att[s.id]||{p:0,t:0},p=pct(s.id);return `<div class="flip"><div class="in">
   <div class="face card" style="--c:${s.color}"><h3>${esc(s.name)}</h3><div class="big ${p!=null&&p<75?"bad":""}">${p==null?"–":p+"%"}</div><div class="bar" style="--c:${s.color}"><i style="width:${p||0}%"></i><u></u></div>
@@ -76,6 +127,8 @@ V.profile=()=>{const p=S.profile,o=t=>`<option value="${t}"${S.theme==t?" select
 const TABS=[["overview","Overview"],["timetable","Timetable"],["attendance","Attendance"],["exams","Exams"],["grades","Grades"],["focus","Focus"],["notices","Notices"],["profile","Profile"]];
 function render(){
   const t=TABS.find(x=>x[0]==location.hash.slice(1))||TABS[0];
+  // forget timetable UI state when leaving the view
+  if(t[0]!="timetable"){ttDay=null;ttSheet=null}
   document.documentElement.dataset.theme=S.theme;
   $("#tabs").innerHTML=TABS.map(([k,n])=>`<a href="#${k}" class="${k==t[0]?"on":""}">${n}</a>`).join("");
   $("#title").textContent=t[1];$("#sub").textContent=`${S.profile.name} · ${S.profile.course}, Sem ${S.profile.sem} · ${new Date().toDateString()}`;
@@ -88,6 +141,8 @@ function tickCD(){$$("[data-cd]").forEach(el=>{let ms=Math.max(0,new Date(el.dat
   const v=[864e5,36e5,6e4,1e3].map(u=>{const x=Math.floor(ms/u);ms-=x*u;return x});
   $$("b",el).forEach((b,i)=>{const t=String(v[i]).padStart(2,0);if(b.textContent!=t){b.textContent=t;b.classList.remove("flipit");void b.offsetWidth;b.classList.add("flipit")}})})}
 setInterval(tickCD,1000);
+// keep the now-line and Now/Next badges fresh, but never wipe an open sheet
+setInterval(()=>{if(location.hash=="#timetable"&&!ttSheet)render()},60000);
 const pm={mode:"focus",left:1500,run:false},PM={focus:1500,break:300};
 function drawPM(){const r=$("#ring");if(!r)return;$("#pmt").textContent=String(Math.floor(pm.left/60)).padStart(2,0)+":"+String(pm.left%60).padStart(2,0);
   r.style.strokeDashoffset=628*(1-pm.left/PM[pm.mode]);$("#pmm").textContent=pm.mode=="focus"?"Focus":"Break";$("#pms").textContent=pm.run?"Pause":"Start"}
@@ -109,9 +164,16 @@ const A={
   notify:()=>{if(!("Notification" in window))return toast("This browser has no notifications. In-app reminders still work.");Notification.requestPermission().then(r=>toast(r=="granted"?"Reminders on. Keep this tab open.":"Notifications blocked. In-app reminders still work."))},
   pms:()=>{pm.run=!pm.run;drawPM()},pmr:()=>{pm.run=false;pm.left=PM[pm.mode];drawPM()},pmx:()=>{pm.mode=pm.mode=="focus"?"break":"focus";pm.left=PM[pm.mode];pm.run=false;drawPM()},
   demo:()=>{seed();render();toast("Demo data loaded.")},
-  clear:()=>{if(confirm("Delete all your data?")){const t=S.theme,p=S.profile;S=fresh();S.theme=t;S.profile=p;save();render()}}
+  clear:()=>{if(confirm("Delete all your data?")){const t=S.theme,p=S.profile;S=fresh();S.theme=t;S.profile=p;save();render()}},
+  ttAdd:()=>{ttSheet={};render();const f=$(".sheet select");if(f)f.focus()},
+  ttEdit:(b,d)=>{ttSheet={id:d.id};render();const f=$(".sheet select");if(f)f.focus()},
+  ttClose:()=>{ttSheet=null;render()},
+  ttDay:(b,d)=>{ttDay=+d.day;render()},
+  ttDel:(b,d)=>{S.tt=S.tt.filter(x=>x.id!=d.id);ttSheet=null;save();render()},
 };
 document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b)A[b.dataset.a](b,b.dataset)});
+// Escape closes the class sheet
+document.addEventListener("keydown",e=>{if(e.key=="Escape"&&ttSheet){ttSheet=null;render()}});
 $("#themeBtn").onclick=()=>{S.theme=S.theme=="dark"?"light":"dark";save();render()};
 
 // ---------- forms ----------
@@ -119,7 +181,7 @@ document.addEventListener("submit",e=>{const f=e.target.closest("[data-f]");if(!
   const d=Object.fromEntries(new FormData(f)),k=f.dataset.f,id=uid();
   if((k=="tt"||k=="exams")&&!S.subjects.length)return toast("Add a subject in Attendance first.");
   if(k=="subj")S.subjects.push({id,name:d.name.trim(),color:COL[S.subjects.length%6]});
-  else if(k=="tt"){if(d.end<=d.start)return toast("End time must be after start time.");S.tt.push({id,...d,day:+d.day})}
+  else if(k=="ttSheet"){if(!S.subjects.length)return toast("Add a subject in Attendance first.");if(d.end<=d.start)return toast("End time must be after start time.");if(d.id){const c=S.tt.find(x=>x.id==d.id);Object.assign(c,{day:+d.day,start:d.start,end:d.end,subj:d.subj,room:d.room})}else S.tt.push({id,day:+d.day,start:d.start,end:d.end,subj:d.subj,room:d.room});ttSheet=null}
   else if(k=="exams")S.exams.push({id,...d});
   else if(k=="grades"){if(+d.marks>+d.max)return toast("Marks cannot be more than the maximum.");S.grades.push({id,sem:+d.sem,name:d.name,credits:+d.credits,marks:+d.marks,max:+d.max})}
   else if(k=="notices")S.notices.push({id,title:d.title,body:d.body||"",pin:d.pin?1:0,date:new Date().toISOString().slice(0,10)});
@@ -133,5 +195,23 @@ document.addEventListener("pointermove",e=>{const c=e.target.closest(".tilt");
   if(!c||!matchMedia("(hover:hover)").matches||matchMedia("(prefers-reduced-motion:reduce)").matches)return;
   const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
   c.classList.add("hot");c.style.transform=`perspective(700px) rotateX(${-y*8}deg) rotateY(${x*8}deg) translateY(-2px)`});
+
+// ---------- intro splash, once per tab ----------
+function intro(){
+  const sp=$("#splash");if(!sp)return;
+  // skip entirely when reduced motion is preferred
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+  // show only once per tab
+  try{if(sessionStorage.getItem("sd.intro"))return;sessionStorage.setItem("sd.intro","1")}catch(e){return}
+  // split the word so letters slide up with a 40ms stagger
+  const w=$("#splashWord"),txt=w.textContent;w.textContent="";
+  [...txt].forEach((ch,i)=>{const s=document.createElement("span");s.textContent=ch==" "?" ":ch;s.style.animationDelay=(i*40)+"ms";w.appendChild(s)});
+  sp.hidden=false;let done=false;
+  // slide the splash up and fade it out, then remove it
+  const hide=()=>{if(done)return;done=true;removeEventListener("keydown",hide);sp.classList.add("out");setTimeout(()=>sp.remove(),550)};
+  sp.addEventListener("click",hide);addEventListener("keydown",hide);
+  setTimeout(hide,1800);
+}
+intro();
 
 render();
