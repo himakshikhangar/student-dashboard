@@ -33,12 +33,67 @@ try {
 <button type="button" id="theme-btn" class="btn btn-yellow">Change Theme</button>
 </div>
 </header>
+<section class="stats" aria-label="Class stats">
+<div class="stat"><span class="stat-label">Students</span><span class="stat-value" id="stat-students">0</span></div>
+<div class="stat"><span class="stat-label">Class average</span><span class="stat-value" id="stat-average">No data</span></div>
+<div class="stat"><span class="stat-label">Present today</span><span class="stat-value" id="stat-present">0</span></div>
+<div class="stat"><span class="stat-label">Need attention</span><span class="stat-value" id="stat-attention">0</span></div>
+</section>
 <div class="actions secondary">
+<button type="button" id="mark-all-btn" class="btn">Mark all present</button>
 <button type="button" id="backup-btn" class="btn">Download backup</button>
 <button type="button" id="restore-btn" class="btn">Restore backup</button>
+<button type="button" id="csv-btn" class="btn">Export CSV</button>
 <input type="file" id="restore-file" accept="application/json" hidden>
 </div>
 <p id="restore-error" class="error" hidden></p>
+<section class="toolbar" aria-label="Search and filter">
+<div>
+<label for="search-input">Search</label>
+<input id="search-input" type="search" placeholder="Name or roll number">
+</div>
+<div>
+<label for="filter-class">Class</label>
+<select id="filter-class"><option value="">All classes</option></select>
+</div>
+<div>
+<label for="filter-grade">Grade</label>
+<select id="filter-grade">
+<option value="">All grades</option>
+<option value="A">A</option><option value="B">B</option>
+<option value="C">C</option><option value="D">D</option>
+<option value="F">F</option><option value="none">No grade</option>
+</select>
+</div>
+<div>
+<label for="filter-attention">Attention</label>
+<select id="filter-attention">
+<option value="">Everyone</option>
+<option value="yes">Needs attention</option>
+</select>
+</div>
+<div>
+<label for="sort-by">Sort</label>
+<select id="sort-by">
+<option value="name">Name</option>
+<option value="rollNo">Roll number</option>
+<option value="average">Average</option>
+<option value="attendance">Attendance</option>
+</select>
+</div>
+</section>
+<div class="viewtabs" role="tablist" aria-label="Views">
+<button type="button" id="tab-classroom" class="btn" role="tab" aria-selected="false">Classroom</button>
+<button type="button" id="tab-cards" class="btn" role="tab" aria-selected="true">Cards</button>
+<button type="button" id="tab-stars" class="btn" role="tab" aria-selected="false">Constellation</button>
+</div>
+<div class="main">
+<div class="view-area">
+<div id="view-3d" hidden>
+<div id="scene"></div>
+<p id="scene-note" class="muted" hidden></p>
+</div>
+<div id="view-cards">
 <form id="student-form" hidden>
 <h2 id="form-title">Add student</h2>
 <div>
@@ -64,13 +119,76 @@ try {
 <button type="button" id="sample-btn" class="btn btn-blue">Load sample class</button>
 </div>
 <div id="students" aria-live="polite"></div>
+<section id="attention-section" aria-label="Needs attention">
+<h2>Needs attention</h2>
+<ul id="attention-list"></ul>
+</section>
+<section aria-label="Charts">
+<h2>Grade distribution</h2>
+<svg id="chart-grades" width="420" height="140" role="img" aria-label="Grade distribution bars"></svg>
+</section>
+</div>
+<div id="view-stars" hidden>
+<canvas id="stars" width="640" height="420" aria-label="Constellation view"></canvas>
+<p class="muted">Constellation arrives in Phase 5.</p>
+</div>
+</div>
+<aside id="panel" aria-label="Student panel" hidden>
+<h2 id="panel-name"></h2>
+<p id="panel-meta" class="muted"></p>
+<p id="panel-stats"></p>
+<p id="panel-badges"></p>
+<p id="panel-trend"></p>
+<svg id="panel-chart" width="280" height="120" role="img" aria-label="Test scores line"></svg>
+<h3>Attendance today</h3>
+<button type="button" id="panel-present" class="btn">Mark present today</button>
+<h3>Record test</h3>
+<form id="test-form">
+<div>
+<label for="test-subject">Subject</label>
+<select id="test-subject"></select>
+</div>
+<div>
+<label for="test-name">Test name</label>
+<input id="test-name" type="text" value="Unit test">
+</div>
+<div>
+<label for="test-date">Date</label>
+<input id="test-date" type="date" required>
+</div>
+<div>
+<label for="test-score">Score</label>
+<input id="test-score" type="number" min="0" step="1" required>
+</div>
+<div>
+<label for="test-max">Max</label>
+<input id="test-max" type="number" min="1" step="1" value="50" required>
+</div>
+<p id="test-error" class="error" hidden></p>
+<button type="submit" class="btn btn-green">Save test</button>
+</form>
+<h3>Private notes</h3>
+<textarea id="notes-input" maxlength="500" rows="4" class="notes"></textarea>
+<button type="button" id="notes-save" class="btn">Save notes</button>
+<div class="form-actions">
+<button type="button" id="panel-edit" class="btn">Edit</button>
+<button type="button" id="panel-delete" class="btn">Delete student</button>
+<button type="button" id="panel-print" class="btn">Print report card</button>
+<button type="button" id="panel-close" class="btn">Close panel</button>
+</div>
+</aside>
+</div>
+<div id="report" aria-hidden="true"></div>
 </div>
 <div id="toast" class="toast" hidden>
 <span>Student deleted. </span>
 <button type="button" id="undo-btn" class="btn">Undo</button>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="seed.js"></script>
 <script src="rules.js"></script>
+<script src="scene3d.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
