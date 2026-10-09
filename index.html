@@ -1,251 +1,27 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="paper">
+<!doctype html>
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Student Dashboard</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<script>
-/* Set the saved theme before first paint, else follow the OS theme. */
-try {
-  var saved = localStorage.getItem("classdeck.theme");
-  var theme = saved === "paper" || saved === "chalkboard" ? saved : null;
-  if (!theme) {
-    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "chalkboard" : "paper";
-  }
-  document.documentElement.setAttribute("data-theme", theme);
-} catch (e) {
-  document.documentElement.setAttribute("data-theme", "paper");
-}
-</script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Campus Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700&family=Public+Sans:wght@400;600&family=Caveat:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Public+Sans:wght@400;600&display=swap">
 <link rel="stylesheet" href="style.css">
+<script>try{document.documentElement.dataset.theme=JSON.parse(localStorage.getItem("sd.v1")).theme}catch(e){}</script>
 </head>
 <body>
-<div class="dashboard">
-<header class="topbar">
-<h1>Student Dashboard</h1>
-<div class="actions">
-<button type="button" id="show-btn" class="btn btn-blue">Show Students</button>
-<button type="button" id="add-btn" class="btn btn-green">Add Student</button>
-<button type="button" id="theme-btn" class="btn btn-yellow">Change Theme</button>
-</div>
-</header>
-<section class="stats" aria-label="Class stats">
-<div class="stat"><span class="stat-label">Students</span><span class="stat-value" id="stat-students">0</span></div>
-<div class="stat"><span class="stat-label">Class average</span><span class="stat-value" id="stat-average">No data</span></div>
-<div class="stat"><span class="stat-label">Present today</span><span class="stat-value" id="stat-present">0</span></div>
-<div class="stat"><span class="stat-label">Need attention</span><span class="stat-value" id="stat-attention">0</span></div>
-</section>
-<div class="actions secondary">
-<button type="button" id="mark-all-btn" class="btn">Mark all present</button>
-<button type="button" id="backup-btn" class="btn">Download backup</button>
-<button type="button" id="restore-btn" class="btn">Restore backup</button>
-<button type="button" id="csv-btn" class="btn">Export CSV</button>
-<input type="file" id="restore-file" accept="application/json" hidden>
-</div>
-<p id="restore-error" class="error" hidden></p>
-<section class="toolbar" aria-label="Search and filter">
-<div>
-<label for="search-input">Search</label>
-<input id="search-input" type="search" placeholder="Name or roll number">
-</div>
-<div>
-<label for="filter-class">Class</label>
-<select id="filter-class"><option value="">All classes</option></select>
-</div>
-<div>
-<label for="filter-grade">Grade</label>
-<select id="filter-grade">
-<option value="">All grades</option>
-<option value="A">A</option><option value="B">B</option>
-<option value="C">C</option><option value="D">D</option>
-<option value="F">F</option><option value="none">No grade</option>
-</select>
-</div>
-<div>
-<label for="filter-attention">Attention</label>
-<select id="filter-attention">
-<option value="">Everyone</option>
-<option value="yes">Needs attention</option>
-</select>
-</div>
-<div>
-<label for="sort-by">Sort</label>
-<select id="sort-by">
-<option value="name">Name</option>
-<option value="rollNo">Roll number</option>
-<option value="average">Average</option>
-<option value="attendance">Attendance</option>
-</select>
-</div>
-</section>
-<div class="viewtabs" role="tablist" aria-label="Views">
-<button type="button" id="tab-classroom" class="btn" role="tab" aria-selected="true">Classroom</button>
-<button type="button" id="tab-cards" class="btn" role="tab" aria-selected="false">Cards</button>
-<button type="button" id="tab-stars" class="btn" role="tab" aria-selected="false">Constellation</button>
-</div>
-<div class="main">
-<div class="view-area">
-<div id="view-3d">
-<div id="scene"></div>
-<p id="scene-note" class="muted" hidden></p>
-</div>
-<div id="view-cards" hidden>
-<form id="student-form" hidden>
-<h2 id="form-title">Add student</h2>
-<div>
-<label for="name-input">Name</label>
-<input id="name-input" name="name" type="text" maxlength="40" required>
-</div>
-<div>
-<label for="roll-input">Roll number</label>
-<input id="roll-input" name="rollNo" type="text" required>
-</div>
-<div>
-<label for="class-input">Class</label>
-<input id="class-input" name="className" type="text" required>
-</div>
-<p id="form-error" class="error" hidden></p>
-<div class="form-actions">
-<button type="submit" class="btn btn-green">Save student</button>
-<button type="button" id="cancel-btn" class="btn">Cancel</button>
-</div>
-</form>
-<div id="empty" hidden>
-<p>No students yet. Add one or load a sample class.</p>
-<button type="button" id="sample-btn" class="btn btn-blue">Load sample class</button>
-</div>
-<div id="students" aria-live="polite"></div>
-<section id="attention-section" aria-label="Needs attention">
-<h2>Needs attention</h2>
-<ul id="attention-list"></ul>
-</section>
-<section aria-label="Charts">
-<h2>Grade distribution</h2>
-<svg id="chart-grades" width="420" height="140" role="img" aria-label="Grade distribution bars"></svg>
-</section>
-</div>
-<div id="view-stars" hidden>
-<canvas id="stars" width="640" height="420" aria-label="Constellation view"></canvas>
-<p class="muted">Lines join students placed in the same team.</p>
-</div>
-</div>
-<aside id="panel" aria-label="Student panel" hidden>
-<h2 id="panel-name"></h2>
-<p id="panel-meta" class="muted"></p>
-<p id="panel-stats"></p>
-<p id="panel-badges"></p>
-<p id="panel-trend"></p>
-<svg id="panel-chart" width="280" height="120" role="img" aria-label="Test scores line"></svg>
-<h3>Attendance today</h3>
-<button type="button" id="panel-present" class="btn">Mark present today</button>
-<h3>Record test</h3>
-<form id="test-form">
-<div>
-<label for="test-subject">Subject</label>
-<select id="test-subject"></select>
-</div>
-<div>
-<label for="test-name">Test name</label>
-<input id="test-name" type="text" value="Unit test">
-</div>
-<div>
-<label for="test-date">Date</label>
-<input id="test-date" type="date" required>
-</div>
-<div>
-<label for="test-score">Score</label>
-<input id="test-score" type="number" min="0" step="1" required>
-</div>
-<div>
-<label for="test-max">Max</label>
-<input id="test-max" type="number" min="1" step="1" value="50" required>
-</div>
-<p id="test-error" class="error" hidden></p>
-<button type="submit" class="btn btn-green">Save test</button>
-</form>
-<h3>Private notes</h3>
-<textarea id="notes-input" maxlength="500" rows="4" class="notes"></textarea>
-<button type="button" id="notes-save" class="btn">Save notes</button>
-<div class="form-actions">
-<button type="button" id="panel-edit" class="btn">Edit</button>
-<button type="button" id="panel-delete" class="btn">Delete student</button>
-<button type="button" id="panel-print" class="btn">Print report card</button>
-<button type="button" id="panel-close" class="btn">Close panel</button>
-</div>
+<aside id="nav">
+  <div class="logo"><div class="cube"><i></i><i></i><i></i><i></i><i></i><i></i></div><b>Campus Desk</b></div>
+  <nav id="tabs"></nav>
 </aside>
-</div>
-<div id="report" aria-hidden="true"></div>
-<section aria-label="Extra tools">
-<h2>Cold-call spinner</h2>
-<div class="wheel-wrap">
-<div id="wheel" class="wheel" aria-hidden="true"><div id="wheel-label">Spin</div></div>
-</div>
-<p id="spin-result" aria-live="polite">Nobody picked yet this round.</p>
-<div class="form-actions">
-<button type="button" id="spin-btn" class="btn">Spin</button>
-<button type="button" id="spin-reset" class="btn">Reset round</button>
-</div>
-<h2>Team maker</h2>
-<div>
-<label for="team-count">Group count</label>
-<input id="team-count" type="number" min="2" max="9" value="3">
-</div>
-<div class="form-actions">
-<button type="button" id="team-btn" class="btn">Make teams</button>
-</div>
-<div id="teams-out" aria-live="polite"></div>
-<h2>Seating shuffler</h2>
-<div class="form-actions">
-<button type="button" id="seat-btn" class="btn">Shuffle seats</button>
-</div>
-<p id="seat-msg" aria-live="polite"></p>
-<h2>Noise meter</h2>
-<div class="form-actions">
-<button type="button" id="noise-btn" class="btn">Start noise meter</button>
-</div>
-<p id="noise-msg" class="muted">Audio is never recorded, stored or sent.</p>
-<h2>Time travel</h2>
-<div>
-<label for="time-slider">Week</label>
-<input id="time-slider" type="range" min="0" max="0" value="0" step="1">
-</div>
-<p id="time-label">Today</p>
-<p id="time-note" class="red-pen" hidden>Viewing a past week. Editing is off until back at today.</p>
-<h2>Most improved</h2>
-<ol id="improved-list"></ol>
-<h2>Parent message maker</h2>
-<div>
-<label for="msg-tone">Tone</label>
-<select id="msg-tone">
-<option value="formal">Formal</option>
-<option value="friendly">Friendly</option>
-<option value="concerned">Concerned</option>
-</select>
-</div>
-<p id="msg-preview"></p>
-<div class="form-actions">
-<button type="button" id="msg-copy" class="btn">Copy message</button>
-</div>
-</section>
-</div>
-<div id="cmdbar" class="cmdbar" hidden>
-<label for="cmd-input">Command</label>
-<input id="cmd-input" type="text" placeholder="add, present, absent, open, theme, spin, undo">
-<ul id="cmd-list"></ul>
-</div>
-<div id="toast" class="toast" hidden>
-<span>Student deleted. </span>
-<button type="button" id="undo-btn" class="btn">Undo</button>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="seed.js"></script>
-<script src="rules.js"></script>
-<script src="scene3d.js"></script>
+<main>
+  <header>
+    <div><h1 id="title"></h1><p id="sub"></p></div>
+    <button id="themeBtn" class="btn y">Change Theme</button>
+  </header>
+  <section id="view" class="view"></section>
+</main>
+<div id="toast" role="status"></div>
 <script src="app.js"></script>
 </body>
 </html>
