@@ -1,69 +1,239 @@
 # Campus Desk
 
-Campus Desk is a dashboard for a college student. It tracks timetable, attendance, exams, grades, focus time, and notices.
+Campus Desk is a dashboard where a college student tracks classes and study.
 
-## Why I built it
+HTML, CSS, JavaScript, Anime.js.
 
-The goal is one quiet place for a student's week. It covers classes, attendance, exams, grades, focus, and notices. Everything runs in the browser with no backend.
+## About
+
+Campus Desk is for college students with busy weeks.
+
+It keeps timetable, attendance, exams, grades and focus time in one place.
+
+It runs in the browser with no backend and no sign-up.
 
 ## Features
 
-| Page | What it does |
-| --- | --- |
-| Overview | Shows attendance, today's classes, next exam, CGPA, shortage alerts, and to-do preview |
-| Timetable | Shows a week grid, highlights today, adds classes, and reminds 10 minutes before class |
-| Attendance | Counts Present and Absent per subject on flip cards and warns below 75% |
-| Exams | Lists exams with a live days, hours, minutes, and seconds countdown |
-| Grades | Stores marks per subject and shows grade points, GPA per semester, and CGPA |
-| Focus | Runs a 25/5 Pomodoro timer with a progress ring, session count, and to-do list |
-| Notices | Adds, pins, and deletes notices by hand |
-| Profile | Edits name, course, semester, and theme, loads demo data, and clears data |
+### Home
+
+- **What it does:** It greets the student and shows six tiles for the day.
+- **How to use it:**
+  1. Open the app to land on Home.
+  2. Read the greeting line for class count and low attendance.
+  3. Tap a button to jump to Attendance, Focus or Timetable.
+- **How it works:** Tiles show classes today, mean attendance, days to the
+  next exam, pending tasks, focus sessions and CGPA. Day progress runs from
+  8:00 to 18:00.
+
+### Overview
+
+- **What it does:** It sums up attendance, classes, exams and grades.
+- **How to use it:**
+  1. Open Overview from the sidebar.
+  2. Read the four stat cards at the top.
+  3. Scroll for today, to-do, subject bars and the week.
+- **How it works:** Mean attendance below 75% raises a shortage alert. Each
+  low subject names the classes needed from `max(0, 3*total - 4*present)`.
+
+### Timetable
+
+- **What it does:** It stores weekly classes and shows them on a grid.
+- **How to use it:**
+  1. Tap Add class and fill day, start, end, subject and room.
+  2. Tap a block to edit it or delete it.
+  3. Tap Enable reminders to allow browser notifications.
+- **How it works:** A reminder fires 10 minutes before class with a toast
+  and a notification. End time must be after start time, and the subject
+  must exist first.
+
+### Attendance
+
+- **What it does:** It counts Present and Absent taps per subject.
+- **How to use it:**
+  1. Add a subject with the form at the top.
+  2. Tap Present or Absent after each class.
+  3. Tap Details to flip the card for counts and advice.
+- **How it works:** Percent is `present / total * 100`, and below 75% the
+  card warns. Recovery uses `max(0, 3*total - 4*present)`, and safe skips
+  use `floor((4*present - 3*total) / 3)`.
+
+### Exams
+
+- **What it does:** It lists exams with a live countdown per exam.
+- **How to use it:**
+  1. Add an exam with name, subject, date and time.
+  2. Watch the days, hrs, min and sec boxes tick.
+  3. Remove past exams with the Remove link.
+- **How it works:** Exams sort by date and time. The countdown ticks every
+  second and flips the digit that changed. The subject must exist first.
+
+### Grades
+
+- **What it does:** It stores marks and shows GPA per semester and CGPA.
+- **How to use it:**
+  1. Add semester, subject, credits, marks and max marks.
+  2. Read GPA cards per semester at the top.
+  3. Delete a row with the cross button.
+- **How it works:** Points run 10, 9, 8, 7, 6, 5, 4, 0 from marks >= 90,
+  80, 70, 60, 50, 45, 40. GPA is the credit-weighted mean. Marks cannot
+  pass max marks.
+
+### Focus
+
+- **What it does:** It runs a Pomodoro timer next to a daily to-do list.
+- **How to use it:**
+  1. Tap Start or Pause on the timer ring.
+  2. Tap Switch to move between Focus and Break.
+  3. Add tasks, tick them done, or delete them.
+- **How it works:** Focus lasts 25 minutes and Break lasts 5 minutes. Each
+  finished focus block adds one to the session count.
+
+### Notices
+
+- **What it does:** It keeps a small manual notice board.
+- **How to use it:**
+  1. Post a notice with a title, details and optional pin.
+  2. Pinned notices sort to the top.
+  3. Delete old notices with the Delete link.
+- **How it works:** Notices store title, body, pin flag and date. The board
+  is manual since the app has no link to a college system.
+
+### Profile
+
+- **What it does:** It stores the student name, course and semester.
+- **How to use it:**
+  1. Edit name, course, semester and theme, then save.
+  2. Tap Load demo data to fill the app with sample rows.
+  3. Tap Clear all data to wipe rows after a confirm.
+- **How it works:** Profile and theme save into the same stored object.
+  Clear keeps the profile and theme and wipes the rest.
+
+### Live side panel
+
+- **What it does:** It shows clock, tasks, attendance, exams and week.
+- **How to use it:**
+  1. Widen the window to 1400 pixels or more.
+  2. Read the panel on the right side.
+  3. It refreshes on each view change.
+- **How it works:** It shows an analog and digital clock, a tasks ring, one
+  bar per subject, the next 2 exams and seven day columns.
+
+### Theme and settings
+
+- **What it does:** It switches the app between light and dark themes.
+- **How to use it:**
+  1. Tap Change Theme in the header.
+  2. Or pick Light or Dark in the Profile form.
+  3. The choice stays after reload.
+- **How it works:** Themes are CSS variables on `[data-theme]`. The saved
+  theme applies before first paint from storage.
+
+## Animations and 3D
+
+| Effect                        | Where                   | Library |
+|-------------------------------|-------------------------|---------|
+| Opening curtains, cube, title | First visit intro       | Anime.js|
+| Active tab pill               | Sidebar                 | Anime.js|
+| Sidebar link entrance         | Sidebar                 | Anime.js|
+| Dock magnification            | Sidebar, wide screens   | Anime.js|
+| Click ripple                  | Sidebar links           | Anime.js|
+| Dot grid build, ripple, glow  | Home hero               | Anime.js|
+| Greeting letters rise         | Home hero               | Anime.js|
+| Stat tiles, rings, count-up   | Home stats              | Anime.js|
+| Rolling clock digits          | Home hero               | Anime.js|
+| Day progress bar fill         | Home                    | Anime.js|
+| Title letters rise            | Every view              | Anime.js|
+| Stat numbers pop              | Overview, Grades        | Anime.js|
+| Rows slide in on scroll       | Lists                   | Anime.js|
+| Attendance bars and count-up  | Overview                | Anime.js|
+| Week day tiles flip in        | Overview                | Anime.js|
+| Subject dots pop in           | Overview                | Anime.js|
+| Cards, clock sweep, ring      | Side panel              | Anime.js|
+| Week columns grow             | Side panel              | Anime.js|
+| Cards fade up on view change  | Every view              | CSS     |
+| Card tilt, max 8 degrees      | Cards, hover devices    | CSS     |
+| Attendance card flip          | Attendance              | CSS     |
+| Countdown digit flip          | Exams                   | CSS     |
+| Spinning cube logo            | Sidebar logo            | CSS     |
+
+All motion switches off when the system has reduced motion turned on.
 
 ## Tech stack
 
-- Plain HTML in `index.html` for structure.
-- Plain CSS in `style.css` for themes and layout.
-- Plain JavaScript in `app.js` for views and storage.
-- Google Fonts for headings and body, with system fallbacks.
-- No frameworks, no build step, no backend.
+| Tool       | Used for                                              |
+|------------|-------------------------------------------------------|
+| HTML       | Page shell, sidebar, view and panel in `index.html`   |
+| CSS        | Themes and layout in `style.css`, `home.css`, `rail.css`|
+| JavaScript | Data, views, routing and timer in `app.js`            |
+| Anime.js   | All scripted motion in the `anime.js/` files          |
+| Google Fonts| Bricolage Grotesque headings and Public Sans body    |
+
+Anime.js v4 loads from the jsDelivr CDN through a defer script tag in
+`index.html`. Fonts load from Google Fonts with `system-ui` fallbacks.
 
 ## Project structure
 
 ```text
 student-dashboard/
-├── AGENTS.md    rules for working on this project
-├── index.html   page shell, sidebar, view container
-├── style.css    light and dark themes, layout, motion
-└── app.js       data, eight views, reminders, routing
+├── AGENTS.md           # Rules for working on this project
+├── README.md           # This file
+├── index.html          # Page shell, sidebar, view and panel
+├── style.css           # Themes, layout, cards, flip and motion
+├── home.css            # Home hero, dot grid and stat tiles
+├── rail.css            # Live side panel for wide screens
+├── app.js              # Data, nine views, routing and reminders
+├── .gitignore          # Git ignore rules
+└── anime.js/           # Anime.js effects, one file per area
+    ├── anime-intro.js  # Opening curtains, cube and title
+    ├── anime-nav.js    # Tab pill, dock zoom and click ripple
+    ├── anime-home.js   # Dot grid, greeting, tiles and clock
+    ├── anime-fill.js   # Overview bars, day tiles and dots
+    ├── anime-fx.js     # Title, stats and row entrance
+    └── anime-rail.js   # Side panel clock, ring, bars and week
 ```
 
 ## Run it locally
 
-1. Open the `student-dashboard` folder.
-2. Double-click `index.html`.
-3. Use the sidebar to move between pages.
-4. For class reminders, allow notifications when asked.
+1. Install VS Code on your machine.
+2. Install the Live Server extension in VS Code.
+3. Open the `student-dashboard` folder in VS Code.
+4. Right-click `index.html` and choose Open with Live Server.
+5. Keep an internet link on, since fonts and Anime.js load from CDNs.
 
-## How it works
+## How your data is stored
 
-- The app stores one object under the `sd.v1` key in `localStorage`.
-- The sidebar uses hash routes like `#grades` to switch views.
-- Attendance percent is present divided by total, times 100.
-- Shortage starts below 75%, with catch-up counts shown.
-- Grade points run 10 to 0 on a 10-point scale.
-- GPA is the credit-weighted mean of grade points.
-- Reminders check every 30 seconds while the tab stays open.
+Everything stays in this browser in one stored object, and nothing is sent
+anywhere. The Load demo data button fills sample rows, and the Clear all
+data button wipes rows but keeps profile and theme. Clearing browser data
+removes it all.
+
+| Key     | What it holds                                              |
+|---------|------------------------------------------------------------|
+| `sd.v1` | Theme, profile, subjects, classes, attendance, exams, grades, notices, to-dos, focus count|
+
+The intro-seen flag lives in session storage under `sd.intro`.
+
+## Deploy on GitHub Pages
+
+1. Open the repository on GitHub.
+2. Open Settings, then Pages.
+3. Under Source pick "Deploy from a branch".
+4. Pick branch master and folder / (root).
+5. Press Save and wait for the build.
+6. Open https://himakshikhangar.github.io/student-dashboard/ to check it.
 
 ## Known limits
 
-- Reminders only work while the tab is open.
-- The notice board is manual, since there is no backend.
-- Data is one JSON object in this browser only.
-- Clearing site data erases everything.
-- There is no sync between devices or browsers.
+- Class reminders only work while the tab is open.
+- The notice board is manual, with no link to a college system.
+- Data lives in one browser on one device, with no sync.
+- Fonts and Anime.js need internet, since they load from CDNs.
+- If the CDN scripts fail, the page still works but motion is lost.
+- The page points to effect scripts at the root, but the files sit in
+  `anime.js/`, so fix the paths if animations do not run.
 
-## Security notes
+## Live demo
 
-- Nothing is sent anywhere.
-- There are no accounts and no passwords.
-- Clearing the browser profile removes the data.
+Visit my project using: **[add your link here]**
+
+<!-- After deploying, replace [add your link here] with: [https://himakshikhangar.github.io/student-dashboard/](https://himakshikhangar.github.io/student-dashboard/) -->
