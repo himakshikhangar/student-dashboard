@@ -65,12 +65,65 @@ const todoList=l=>l.map(t=>`<div class="row" style="--c:var(--blue)"><button cla
 
 // ---------- views ----------
 const V={};
+// Home landing page (default route). Uses existing S data; no shape change.
+V.home=()=>{
+  const today=S.tt.filter(c=>c.day==dayIdx()).sort(byStart);
+  const finished=today.filter(c=>c.end<=hm()).length;
+  const ps=S.subjects.map(s=>pct(s.id)).filter(x=>x!=null);
+  const avg=ps.length?Math.round(ps.reduce((a,b)=>a+b)/ps.length):0;
+  const ex=nextExam();
+  const days=ex?Math.ceil((examTime(ex)-Date.now())/864e5):0;
+  const pend=S.todos.filter(t=>!t.done).length;
+  const tot=S.todos.length;
+  const cg=gpa(S.grades);
+  const fCls=today.length?finished/today.length:0;
+  const fAtt=avg/100;
+  const fExam=ex?1-Math.min(days,30)/30:0;
+  const fTask=tot?(tot-pend)/tot:0;
+  const fPomo=Math.min(S.pomo,8)/8;
+  const fCg=cg/10;
+  // greeting text (anime-home.js re-checks and animates it)
+  const h=new Date().getHours();
+  const gr=h>=5&&h<=11?"Good morning":h>=12&&h<=16?"Good afternoon":h>=17&&h<=20?"Good evening":"Good night";
+  const first=today[0];
+  let line=today.length?`You have ${today.length} class${today.length==1?"":"es"} today. First one at ${first.start}.`:`No classes today. A good day to catch up.`;
+  const lows=S.subjects.map(s=>({s,p:pct(s.id)})).filter(x=>x.p!=null&&x.p<75).sort((a,b)=>a.p-b.p);
+  if(lows.length)line+=` ${lows[0].s.name} needs attention.`;
+  const date=new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  const n0=new Date();
+  const clock=[n0.getHours(),n0.getMinutes(),n0.getSeconds()].map(x=>String(x).padStart(2,0)).join(":");
+  // one stat tile with an SVG ring (r=34, dasharray 214)
+  const tile=(label,val,suffix,fill)=>{
+    const f=Math.max(0,Math.min(1,fill));
+    const off=(214*(1-f)).toFixed(1);
+    return `<div class="card home-tile" data-fill="${f.toFixed(3)}"><svg viewBox="0 0 80 80" aria-hidden="true"><circle class="trk" cx="40" cy="40" r="34" stroke-dasharray="214"></circle><circle class="rg" cx="40" cy="40" r="34" stroke-dasharray="214" stroke-dashoffset="${off}" data-fill="${f.toFixed(3)}"></circle></svg><div><b class="hv" data-to="${val}" data-suffix="${suffix}">${val}${suffix}</b><small>${label}</small></div></div>`};
+  const tiles=tile("Classes today",today.length,"",fCls)+tile("Overall attendance",avg,"%",fAtt)+tile("Next exam (days)",days,"",fExam)+tile("Tasks pending",pend,"",fTask)+tile("Focus sessions",S.pomo,"",fPomo)+tile("CGPA",cg.toFixed(2),"",fCg);
+  // up next: next class today, else next exam, else nothing
+  const nx=S.tt.filter(c=>c.day==dayIdx()&&c.start>hm()).sort(byStart)[0];
+  let up="";
+  if(nx){const s=subj(nx.subj);up=`<p><b>${esc(s.name)}</b> · ${nx.start} · ${esc(nx.room||"")}</p><p class="up-time" data-start="${nx.start}">Starts in <b>--:--</b></p>`}
+  else if(ex){const s=subj(ex.subj);up=`<p><b>${esc(s.name)}</b> · ${esc(ex.name)} · ${ex.date} ${ex.time}</p><p class="up-time" data-exam="${ex.date}T${ex.time}"><b>--</b></p>`}
+  else up=`<p>Nothing scheduled</p>`;
+  // day progress 8:00 to 18:00
+  const d=new Date(),mins=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+  const dpct=Math.max(0,Math.min(100,(mins-480)/(1080-480)*100));
+  return `<section class="hero card"><div id="dotgrid" aria-hidden="true"></div><div class="hero-text"><small id="hdate">${date}</small><h2 id="greet">${esc(gr+", "+S.profile.name)}</h2><p id="hline">${esc(line)}</p><div id="hclock">${clock}</div><div class="btns"><a class="btn b" href="#attendance">Mark attendance</a><a class="btn g" href="#focus">Start focusing</a><a class="btn y" href="#timetable">Open timetable</a></div></div></section>`
+  +`<div class="grid home-stats">${tiles}</div>`
+  +`<div class="grid two"><div class="card" id="upnext"><h3>Up next</h3><div class="up-body">${up}</div></div><div class="card" id="dayprog"><h3>Day progress</h3><div class="daybar"><i class="dayfill" style="width:${dpct.toFixed(1)}%"></i><u class="daymark" style="left:${dpct.toFixed(1)}%"></u></div><div class="daylbl"><span>8:00</span><span class="daypct">${dpct.toFixed(0)}%</span><span>18:00</span></div></div></div>`};
 V.overview=()=>{
   const today=S.tt.filter(c=>c.day==dayIdx()).sort(byStart),ps=S.subjects.map(s=>pct(s.id)).filter(x=>x!=null);
   const avg=ps.length?Math.round(ps.reduce((a,b)=>a+b)/ps.length):0,low=S.subjects.filter(s=>pct(s.id)!=null&&pct(s.id)<75),ex=nextExam();
+  // Subject bars for the fill cards (final state in HTML; anime-fill.js animates from 0)
+  const fillRows=S.subjects.map(s=>{const a=S.att[s.id]||{p:0,t:0},p=pct(s.id),isLow=p!=null&&p<75,w=p==null?0:p;
+    return `<div class="fill-row" style="--c:${s.color}"><div class="fill-top"><b>${esc(s.name)}</b><span class="fill-pct"${p==null?"":` data-pct="${p}"`}>${p==null?"–":p+"%"}</span></div><small class="fill-sub">${a.p} of ${a.t} classes${isLow?` · ${need(s.id)}`:""}</small><div class="fill-bar"><i class="fill-fill${isLow?" low":""}" data-w="${w}" style="width:${w}%"></i><u></u></div></div>`}).join("")||'<p class="empty">Add subjects in Attendance to see bars.</p>';
+  // 7 day tiles with class counts and subject-colour dots
+  const fillDays=DAYS.map((d,i)=>{const list=S.tt.filter(c=>c.day==i);
+    return `<div class="fill-day${i==dayIdx()?" today":""}"><b>${d}</b><span class="fill-count">${list.length} class${list.length==1?"":"es"}</span><span class="fill-dots">${list.map(c=>`<i class="fill-dot" style="background:${subj(c.subj).color}"></i>`).join("")}</span></div>`}).join("");
   return `<div class="grid stats">${stat("Overall attendance",ps.length?avg+"%":"–",avg<75&&ps.length?"red":"green")}${stat("Classes today",today.length)}${stat("Next exam",ex?Math.ceil((examTime(ex)-Date.now())/864e5)+" days":"None")}${stat("CGPA",gpa(S.grades).toFixed(2))}</div>
   ${low.length?`<div class="alert"><b>Attendance shortage</b><br>${low.map(s=>`${esc(s.name)} is at ${pct(s.id)}%: ${need(s.id)}`).join("<br>")}</div>`:""}
-  <div class="grid two"><div class="card"><h3>Today's schedule</h3>${classList(today)}</div><div class="card"><h3>To-do</h3>${todoList(S.todos.slice(0,5))}</div></div>`};
+  <div class="grid two"><div class="card"><h3>Today's schedule</h3>${classList(today)}</div><div class="card"><h3>To-do</h3>${todoList(S.todos.slice(0,5))}</div></div>
+  <div class="card fill-card"><h3>Subject attendance</h3><div class="fill-list">${fillRows}</div></div>
+  <div class="card fill-card"><h3>This week</h3><div class="fill-week">${fillDays}</div></div>`};
 V.timetable=()=>{
   const days=[0,1,2,3,4,5];if(S.tt.some(c=>c.day==6))days.push(6);
   const R=ttRange(),H=[];for(let h=R.s/60;h<R.e/60;h++)H.push(h);
@@ -124,7 +177,7 @@ V.profile=()=>{const p=S.profile,o=t=>`<option value="${t}"${S.theme==t?" select
   <div class="card"><h3>Data</h3><p>Everything is saved only in this browser.</p><div class="btns"><button class="btn g" data-a="demo">Load demo data</button><button class="btn r" data-a="clear">Clear all data</button></div></div>`};
 
 // ---------- render ----------
-const TABS=[["overview","Overview"],["timetable","Timetable"],["attendance","Attendance"],["exams","Exams"],["grades","Grades"],["focus","Focus"],["notices","Notices"],["profile","Profile"]];
+const TABS=[["home","Home"],["overview","Overview"],["timetable","Timetable"],["attendance","Attendance"],["exams","Exams"],["grades","Grades"],["focus","Focus"],["notices","Notices"],["profile","Profile"]];
 function render(){
   const t=TABS.find(x=>x[0]==location.hash.slice(1))||TABS[0];
   // forget timetable UI state when leaving the view
@@ -133,6 +186,7 @@ function render(){
   $("#tabs").innerHTML=TABS.map(([k,n])=>`<a href="#${k}" class="${k==t[0]?"on":""}">${n}</a>`).join("");
   $("#title").textContent=t[1];$("#sub").textContent=`${S.profile.name} · ${S.profile.course}, Sem ${S.profile.sem} · ${new Date().toDateString()}`;
   $("#view").innerHTML=V[t[0]]();tickCD();drawPM();
+  if(t[0]=="home"){try{window.dispatchEvent(new Event("home:render"))}catch(e){}}
 }
 addEventListener("hashchange",render);
 
@@ -195,23 +249,5 @@ document.addEventListener("pointermove",e=>{const c=e.target.closest(".tilt");
   if(!c||!matchMedia("(hover:hover)").matches||matchMedia("(prefers-reduced-motion:reduce)").matches)return;
   const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
   c.classList.add("hot");c.style.transform=`perspective(700px) rotateX(${-y*8}deg) rotateY(${x*8}deg) translateY(-2px)`});
-
-// ---------- intro splash, once per tab ----------
-function intro(){
-  const sp=$("#splash");if(!sp)return;
-  // skip entirely when reduced motion is preferred
-  if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
-  // show only once per tab
-  try{if(sessionStorage.getItem("sd.intro"))return;sessionStorage.setItem("sd.intro","1")}catch(e){return}
-  // split the word so letters slide up with a 40ms stagger
-  const w=$("#splashWord"),txt=w.textContent;w.textContent="";
-  [...txt].forEach((ch,i)=>{const s=document.createElement("span");s.textContent=ch==" "?" ":ch;s.style.animationDelay=(i*40)+"ms";w.appendChild(s)});
-  sp.hidden=false;let done=false;
-  // slide the splash up and fade it out, then remove it
-  const hide=()=>{if(done)return;done=true;removeEventListener("keydown",hide);sp.classList.add("out");setTimeout(()=>sp.remove(),550)};
-  sp.addEventListener("click",hide);addEventListener("keydown",hide);
-  setTimeout(hide,1800);
-}
-intro();
 
 render();

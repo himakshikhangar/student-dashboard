@@ -1,0 +1,30 @@
+/* Home landing page */
+.hero{position:relative;overflow:hidden;min-height:340px;padding:48px;display:flex;align-items:flex-end;margin-bottom:16px}
+#dotgrid{position:absolute;inset:0;display:grid;place-content:center;pointer-events:none;overflow:hidden}
+.dot{width:6px;height:6px;place-self:center;border-radius:50%;background:var(--blue);opacity:.25}
+.hero-text{position:relative;z-index:1;max-width:100%}
+.hero-text .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#hdate{color:var(--mut);font-weight:600}
+#greet{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:clamp(34px,5vw,64px);font-weight:800;line-height:1.05;margin:4px 0 8px;overflow-wrap:break-word}
+#greet span{display:inline-block}
+#hline{max-width:46ch}
+#hclock{font-size:28px;font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:.04em;margin:8px 0}
+#hclock span{display:inline-block;min-width:.6em;text-align:center}
+.home-stats{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.home-tile{display:grid;grid-template-columns:76px 1fr;align-items:center;gap:12px}
+.home-tile svg{width:76px;height:76px;transform:rotate(-90deg)}
+.home-tile .trk{fill:none;stroke:var(--rule);stroke-width:8}
+.home-tile .rg{fill:none;stroke:var(--blue);stroke-width:8;stroke-linecap:round}
+.home-tile b.hv{display:block;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+.home-tile small{color:var(--mut);font-weight:600}
+.up-time b{font-variant-numeric:tabular-nums}
+.daybar{position:relative;height:12px;border-radius:99px;background:var(--rule);margin:16px 0 8px}
+.dayfill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--blue);display:block;width:0}
+.daymark{position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:var(--ink);display:block;transform:translateX(-50%)}
+.daylbl{display:flex;justify-content:space-between;gap:8px;color:var(--mut);font-size:13px}
+@media(max-width:480px){
+.hero{padding:24px;min-height:300px}
+.home-tile{grid-template-columns:64px 1fr}
+.home-tile svg{width:64px;height:64px}
+#hclock{font-size:24px}
+}

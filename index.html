@@ -7,9 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Public+Sans:wght@400;600&display=swap">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="rail.css">
+<link rel="stylesheet" href="home.css">
 <script>try{document.documentElement.dataset.theme=JSON.parse(localStorage.getItem("sd.v1")).theme}catch(e){}</script>
+<script>try{if(!sessionStorage.getItem("sd.intro")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("intro-lock");setTimeout(function(){try{document.documentElement.classList.remove("intro-lock");var n=document.getElementById("intro");if(n)n.remove()}catch(e){}},4000)}catch(e){}</script>
 </head>
 <body>
+<div id="intro"></div>
 <aside id="nav">
   <div class="logo"><div class="cube"><i></i><i></i><i></i><i></i><i></i><i></i></div><b>Campus Desk</b></div>
   <nav id="tabs"></nav>
@@ -21,8 +25,15 @@
   </header>
   <section id="view" class="view"></section>
 </main>
-<div id="splash" hidden><div class="grow"><div class="cube splash-cube" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="splash-word" id="splashWord">Campus Desk</div></div>
+<aside id="rail" aria-label="Live panel"></aside>
 <div id="toast" role="status"></div>
 <script src="app.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/animejs@4/dist/bundles/anime.umd.min.js"></script>
+<script defer src="anime-intro.js"></script>
+<script defer src="anime-fx.js"></script>
+<script defer src="anime-nav.js"></script>
+<script defer src="anime-fill.js"></script>
+<script defer src="anime-home.js"></script>
+<script defer src="anime-rail.js"></script>
 </body>
 </html>

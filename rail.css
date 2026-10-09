@@ -1,0 +1,264 @@
+/* Live right-hand panel for wide screens (1400px and up). */
+#rail {
+  display: none;
+}
+
+@media (max-width: 1399px) {
+  #rail {
+    display: none;
+  }
+}
+
+@media (min-width: 1400px) {
+  main {
+    margin-right: 340px;
+    max-width: none;
+  }
+
+  #rail {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    padding: 28px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 1;
+  }
+}
+
+/* Cards inside the rail reuse .card from style.css. */
+#rail .card {
+  padding: 16px;
+}
+
+#rail h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+/* Clock */
+.rail-clock-wrap {
+  display: grid;
+  place-items: center;
+}
+
+.rail-clock {
+  width: 160px;
+  height: 160px;
+}
+
+.rail-face {
+  fill: var(--bg);
+  stroke: var(--rule);
+  stroke-width: 2;
+}
+
+.rail-tick {
+  stroke: var(--mut);
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.rail-hand {
+  stroke: var(--ink);
+  stroke-linecap: round;
+  transform-origin: 80px 80px;
+}
+
+#rail-sec {
+  stroke: var(--red);
+}
+
+.rail-dot {
+  fill: var(--ink);
+}
+
+.rail-digital {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+}
+
+.rail-date {
+  text-align: center;
+  color: var(--mut);
+  font-size: 13px;
+}
+
+/* Tasks ring */
+.rail-ring-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+}
+
+.rail-ring-wrap svg {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+
+.rail-track {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 10;
+}
+
+#rail-todo-ring {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.rail-ring-txt {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.rail-ring-txt b {
+  font-size: 22px;
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+}
+
+.rail-sub {
+  margin-top: 8px;
+  text-align: center;
+  color: var(--mut);
+  font-size: 13px;
+}
+
+/* Attendance rows */
+.rail-att-row {
+  display: grid;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.rail-att-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.rail-att-top span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.rail-att-top b {
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.rail-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--c);
+}
+
+.rail-bar u {
+  position: absolute;
+  left: 75%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--ink);
+}
+
+/* Exams */
+.rail-exam {
+  border-left: 5px solid var(--c);
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+
+.rail-exam b {
+  display: block;
+}
+
+.rail-exam small {
+  color: var(--mut);
+}
+
+.rail-exam span {
+  display: block;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Week columns */
+.rail-week {
+  display: flex;
+  gap: 6px;
+}
+
+.rail-wk {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.rail-wk-col {
+  height: 84px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.rail-wk-col i {
+  display: block;
+  width: 18px;
+  border-radius: 6px;
+  background: var(--blue);
+  transform-origin: bottom center;
+}
+
+.rail-wk.today i {
+  background: var(--yel);
+}
+
+.rail-wk small {
+  color: var(--mut);
+  font-size: 11px;
+}
+
+.rail-wk.today small {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rail *,
+  #rail *::before,
+  #rail *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
