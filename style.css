@@ -190,7 +190,10 @@ h3 { font-size: 16px; margin: 16px 0 8px; }
   border-radius: 8px;
   background: var(--surface);
   cursor: pointer;
+  transition: transform 300ms ease;
+  transform-style: preserve-3d;
 }
+.card.flip { transform: rotateY(180deg); }
 .card.needs { border-left: 4px solid var(--red); }
 .card p { margin: 4px 0; font-size: 14px; }
 .card .muted { color: var(--muted); }
@@ -216,6 +219,15 @@ table.report-table td.num, table.report-table th.num { text-align: right; font-v
 #panel[hidden] { display: none; }
 
 #scene { width: 100%; height: 420px; border: 1px solid var(--rule); border-radius: 8px; }
+.scene-tip {
+  position: absolute;
+  padding: 4px 8px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 14px;
+  border-radius: 8px;
+  pointer-events: none;
+}
 #stars { width: 100%; border: 1px solid var(--rule); border-radius: 8px; background: var(--bg); }
 
 .toast {
@@ -242,6 +254,11 @@ table.report-table td.num, table.report-table th.num { text-align: right; font-v
   .topbar, .actions, .toolbar, .viewtabs, .main, .toast, #student-form { display: none; }
   #report { display: block; }
   .report-page { page-break-after: always; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+  .stat-value { transition: none; }
 }
 
 @media (max-width: 640px) {

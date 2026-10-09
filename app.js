@@ -8,7 +8,10 @@ var DEFAULT_CONSTRAINTS = { keepApart: [["s_b2", "s_d4"]], frontRow: ["s_c3"] };
 var store = null;
 
 /* UI state for search, filter, sort, selection and time travel. */
-var ui = { search: "", filterClass: "", filterGrade: "", onlyAttention: false, sortBy: "name", selectedId: null, view: "cards", timeCutoff: null, lastTeams: [] };
+var ui = { search: "", filterClass: "", filterGrade: "", onlyAttention: false, sortBy: "name", selectedId: null, view: "classroom", timeCutoff: null, lastTeams: [] };
+
+/* True once the 3D scene has been built. */
+var sceneReady = false;
 
 /* Id of the student being edited, null when adding. */
 var editingId = null;
@@ -268,9 +271,7 @@ function studentCard(s) {
   });
   row.appendChild(toggle);
   card.appendChild(row);
-  card.addEventListener("click", function () {
-    openPanel(s.id);
-  });
+  enableCardMotion(card, s);
   card.addEventListener("keydown", function (ev) {
     if (ev.key === "Enter" || ev.key === " ") {
       ev.preventDefault();
@@ -759,6 +760,11 @@ function setView(name) {
 /* Try the 3D scene, fall back to cards with a reason. */
 function initSceneFallback() {
   var note = document.getElementById("scene-note");
+  if (sceneReady) {
+    note.hidden = true;
+    renderScene();
+    return;
+  }
   var ok = false;
   try {
     if (typeof ClassScene !== "undefined") {
@@ -771,7 +777,59 @@ function initSceneFallback() {
     note.hidden = false;
     note.textContent = "3D is unavailable (WebGL missing). Showing cards instead.";
     setView("cards");
+    return;
   }
+  sceneReady = true;
+  note.hidden = true;
+  try {
+    ClassScene.onSelect(openPanel);
+  } catch (e) {
+    return;
+  }
+  renderScene();
+}
+
+/* Send students with status to the 3D scene. */
+function renderScene() {
+  if (!sceneReady || typeof ClassScene === "undefined") {
+    return;
+  }
+  try {
+    ClassScene.render(store.students.map(function (s) {
+      var v = studentView(s);
+      return { id: s.id, name: s.name, average: v.avg, grade: v.grade, needsAttention: v.attention, seat: s.seat };
+    }));
+  } catch (e) {
+    return;
+  }
+}
+
+/* Add tilt on hover and flip on click to one card. */
+function enableCardMotion(card, s) {
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var canHover = window.matchMedia("(hover: hover)").matches;
+  if (canHover && !reduce) {
+    card.addEventListener("mousemove", function (ev) {
+      var rect = card.getBoundingClientRect();
+      var dx = (ev.clientX - rect.left) / rect.width - 0.5;
+      var dy = (ev.clientY - rect.top) / rect.height - 0.5;
+      card.style.transform = "rotateX(" + (-dy * 6) + "deg) rotateY(" + (dx * 6) + "deg)";
+    });
+    card.addEventListener("mouseleave", function () {
+      card.style.transform = "";
+    });
+  }
+  card.addEventListener("click", function () {
+    if (reduce) {
+      openPanel(s.id);
+      return;
+    }
+    card.classList.add("flip");
+    setTimeout(function () {
+      card.classList.remove("flip");
+    }, 300);
+    openPanel(s.id);
+  });
 }
 
 /* Read the theme currently set on <html>. */
@@ -797,12 +855,12 @@ function renderAll() {
   renderStudents();
   renderAttention();
   renderGradeChart();
-  if (typeof ClassScene !== "undefined" && ui.view === "classroom") {
+  if (ui.view === "classroom") {
+    renderScene();
+  }
+  if (typeof renderStars === "function" && ui.view === "stars") {
     try {
-      ClassScene.render(store.students.map(function (s) {
-        var v = studentView(s);
-        return { id: s.id, name: s.name, average: v.avg, grade: v.grade, needsAttention: v.attention };
-      }));
+      renderStars();
     } catch (e) {
       return;
     }
@@ -894,6 +952,14 @@ function init() {
   });
   document.getElementById("panel-print").addEventListener("click", printReports);
   document.getElementById("test-date").value = todayKey();
+  try {
+    if (typeof ClassScene !== "undefined") {
+      ClassScene.onSelect(openPanel);
+    }
+  } catch (e) {
+    sceneReady = false;
+  }
+  setView("classroom");
   renderAll();
 }
 
