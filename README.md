@@ -2,7 +2,7 @@
 
 Campus Desk is a dashboard where a college student manages study tasks.
 
-HTML, CSS, JavaScript, Anime.js.
+HTML, CSS, JavaScript, Anime.js, Opencode.
 
 ## About
 
@@ -167,7 +167,7 @@ All motion switches off when the system has reduced motion turned on.
 | CSS          | Themes and layout in `style.css`, `home.css`, `rail.css` |
 | JavaScript   | Data, views, routing and timer in `app.js`               |
 | Anime.js v4  | Motion in `anime-*.js` files, loads from jsDelivr CDN    |
-| Google Fonts | Bricolage Grotesque headings and Public Sans body        |
+| Opencode     | #D animation and .js files                               |
 
 Anime.js v4 loads from the jsDelivr CDN through a defer script tag in
 `index.html`. Fonts load from Google Fonts with `system-ui` fallbacks.
@@ -234,6 +234,5 @@ removes it all.
 
 ## Live demo
 
-Visit my project using: **[add your link here]**
+Visit my project using: **(https://thee-studentt-dashboardd-portall.vercel.app/)**
 
-<!-- After deploying, replace [add your link here] with: [https://himakshikhangar.github.io/student-dashboard/](https://himakshikhangar.github.io/student-dashboard/) -->
